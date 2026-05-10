@@ -90,6 +90,12 @@
   border: 1px solid #E2E8F0;
 }
 
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   display: inline-block;
@@ -123,6 +129,15 @@
 
 .fade-in {
   animation: fadeIn 0.8s ease-out forwards;
+}
+
+@keyframes slideInFromTop {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.slide-in-from-top-2 {
+  animation: slideInFromTop 0.2s ease-out forwards;
 }
 
 .slide-in-from-bottom-4 {

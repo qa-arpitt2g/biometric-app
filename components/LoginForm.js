@@ -1,8 +1,16 @@
 "use client";
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Simulate login and redirect to the dashboard/upload page
+    router.push('/upload');
+  };
 
   return (
     <div className="w-full">
@@ -11,7 +19,7 @@ export default function LoginForm() {
         <p className="text-[#44474e] text-base">Please enter your details to access the portal.</p>
       </div>
 
-      <form className="flex flex-col gap-6" onSubmit={(e) => e.preventDefault()}>
+      <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
         {/* Email Field */}
         <div className="flex flex-col gap-2">
           <label className="text-xs font-bold text-[#44474e] tracking-widest uppercase" htmlFor="email">Email Address</label>
