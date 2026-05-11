@@ -2,89 +2,180 @@
 
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
-import ProcessedAttendancePreview, { attendanceColumns } from '@/components/ProcessedAttendancePreview';
+import ProcessedAttendancePreview from '@/components/ProcessedAttendancePreview';
 import { GuidelinesCard, UploadCard } from '@/components/UploadSection';
 
 const headerAliases = {
-  sNo: ['s.no', 'sno', 'sr no', 'serial no', 'serial number'],
-  employeeCode: ['employee code', 'employeecode', 'employee id', 'employeeid', 'emp code', 'emp id', 'code'],
+  employeeCode: ['employee code', 'employeecode', 'employee id', 'employeeid', 'emp code', 'emp id', 'emp no', 'employee no', 'enroll no', 'enrollment no', 'person id', 'personid', 'staff id', 'staff code', 'user id', 'userid', 'user no', 'code', 'id'],
+  employeeName: ['employeename', 'employee name', 'emp name', 'employee', 'person name', 'staff name', 'user name', 'username', 'name'],
+  punchTimestamp: ['punch timestamp', 'punchtimestamp', 'punch time', 'punchtime', 'timestamp', 'date time', 'datetime', 'date/time', 'punch date time', 'punch datetime', 'attendance time', 'log time', 'log datetime', 'record time', 'event time', 'verify time', 'scan time'],
+  punchDate: ['date', 'punch date', 'attendance date', 'log date', 'record date', 'event date', 'verify date'],
+  punchTime: ['time', 'punch', 'punch time', 'attendance time', 'log time', 'record time', 'event time', 'verify time', 'scan time'],
+  punchType: ['in out', 'inout', 'in/out', 'i o', 'io', 'direction', 'status', 'punch type', 'punchtype', 'type', 'state'],
+};
+
+const reportAliases = {
+  sNo: ['s no', 'sno', 'sr no', 'serial no'],
+  employeeCode: ['employee code', 'employeecode', 'emp code', 'employee id', 'emp id'],
   employeeName: ['employeename', 'employee name', 'emp name', 'name'],
-  totalIn: ['total in', 'totalin', 'in count', 'punch in count'],
-  totalOut: ['total out', 'totalout', 'out count', 'punch out count'],
-  firstIn: ['first in', 'firstin', 'checkin', 'check in', 'in time'],
+  totalIn: ['total in', 'totalin'],
+  totalOut: ['total out', 'totalout'],
+  firstIn: ['first in', 'firstin'],
   lastIn: ['last in', 'lastin'],
-  lastOut: ['last out', 'lastout', 'checkout', 'check out', 'out time'],
-  totalLoginTime: ['total login time', 'totallogintime', 'login hours', 'working hours', 'total hours'],
-  totalBreakTime: ['total break time', 'totalbreaktime', 'break time', 'break hours'],
+  lastOut: ['last out', 'lastout'],
+  totalLoginTime: ['total login time', 'totallogintime'],
+  totalBreakTime: ['total break time', 'totalbreaktime'],
 };
 
 function normalizeHeader(value) {
-  return String(value || '').trim().toLowerCase().replace(/[_-]/g, ' ').replace(/\s+/g, ' ');
+  return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function matchesHeader(header, alias) {
+  return header === alias || header.includes(alias) || alias.includes(header);
+}
+
+function toCellValue(value) {
+  if (value === undefined || value === null) {
+    return '';
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  return String(value).trim();
 }
 
 function findHeaderRow(rows) {
   return rows.findIndex((row) => {
     const normalized = row.map(normalizeHeader);
-    const matchedColumns = attendanceColumns.filter((column) => {
-      const aliases = headerAliases[column.key] || [];
-      return aliases.some((alias) => normalized.includes(alias));
-    });
+    const hasEmployee = headerAliases.employeeCode.some((alias) => normalized.some((header) => matchesHeader(header, alias)))
+      || headerAliases.employeeName.some((alias) => normalized.some((header) => matchesHeader(header, alias)));
+    const hasPunchTime = headerAliases.punchTimestamp.some((alias) => normalized.some((header) => matchesHeader(header, alias)))
+      || headerAliases.punchTime.some((alias) => normalized.some((header) => matchesHeader(header, alias)));
 
-    return matchedColumns.length >= 3;
+    return hasEmployee && hasPunchTime;
   });
 }
 
-function createColumnMap(headerRow) {
-  const normalizedHeaders = headerRow.map(normalizeHeader);
-
-  return attendanceColumns.reduce((map, column) => {
-    const aliases = headerAliases[column.key] || [];
-    const index = normalizedHeaders.findIndex((header) => aliases.includes(header));
-
-    return { ...map, [column.key]: index };
-  }, {});
+function findColumnIndex(headers, key) {
+  const aliases = headerAliases[key];
+  return headers.findIndex((header) => aliases.some((alias) => matchesHeader(header, alias)));
 }
 
-function toCellValue(value) {
-  return value === undefined || value === null ? '' : String(value);
+function findReportColumnIndex(headers, key) {
+  const aliases = reportAliases[key];
+  return headers.findIndex((header) => aliases.some((alias) => matchesHeader(header, alias)));
 }
 
-function parseDurationMinutes(value) {
+function findProcessedReportHeaderRow(rows) {
+  return rows.findIndex((row) => {
+    const normalized = row.map(normalizeHeader);
+    const requiredColumns = ['employeeCode', 'employeeName', 'totalIn', 'totalOut', 'firstIn', 'lastIn', 'lastOut', 'totalLoginTime', 'totalBreakTime'];
+
+    return requiredColumns.every((key) => findReportColumnIndex(normalized, key) >= 0);
+  });
+}
+
+function excelSerialToDate(serial) {
+  const milliseconds = Math.round((Number(serial) - 25569) * 86400 * 1000);
+  return new Date(milliseconds);
+}
+
+function parseDateOnly(value) {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value === 'number' || /^\d+(\.\d+)?$/.test(String(value || '').trim())) {
+    return excelSerialToDate(value);
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function combineDateAndTime(dateValue, timeValue) {
+  const date = parseDateOnly(dateValue);
+
+  if (!date) {
+    return null;
+  }
+
+  if (timeValue instanceof Date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), timeValue.getHours(), timeValue.getMinutes(), timeValue.getSeconds());
+  }
+
+  if (typeof timeValue === 'number' || /^\d+(\.\d+)?$/.test(String(timeValue || '').trim())) {
+    const totalSeconds = Math.round((Number(timeValue) % 1) * 86400);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes, seconds);
+  }
+
+  return null;
+}
+
+function parseDateTime(value, dateValue = '') {
+  const combinedDateTime = dateValue ? combineDateAndTime(dateValue, value) : null;
+
+  if (combinedDateTime) {
+    return combinedDateTime;
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    return excelSerialToDate(value);
+  }
+
   const text = String(value || '').trim();
-  const colonMatch = text.match(/^(\d{1,2}):(\d{2})/);
-  const hourMatch = text.match(/(\d+(?:\.\d+)?)\s*h/i);
-  const minuteMatch = text.match(/(\d+)\s*m/i);
+  const dateText = dateValue instanceof Date ? formatDateKey(dateValue) : String(dateValue || '').trim();
 
-  if (colonMatch) {
-    return Number(colonMatch[1]) * 60 + Number(colonMatch[2]);
+  if (!text && !dateText) {
+    return null;
   }
 
-  if (hourMatch || minuteMatch) {
-    return Math.round(Number(hourMatch?.[1] || 0) * 60) + Number(minuteMatch?.[1] || 0);
+  if (/^\d+(\.\d+)?$/.test(text)) {
+    return excelSerialToDate(text);
   }
 
-  return 0;
-}
+  const combinedText = dateText && !text.match(/\d{1,4}[-/]\d{1,2}[-/]\d{1,4}/)
+    ? `${dateText} ${text}`
+    : text;
+  const parsed = new Date(combinedText);
 
-function formatDuration(minutes) {
-  if (!minutes) {
-    return '';
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed;
   }
 
-  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-}
-
-function parseClockMinutes(value) {
-  const text = String(value || '').trim();
-  const match = text.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?/i);
+  const match = combinedText.match(/(?:(\d{1,2})[-/](\d{1,2})[-/](\d{2,4}))?.*?(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
 
   if (!match) {
     return null;
   }
 
-  let hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  const meridiem = match[3]?.toUpperCase();
+  const now = new Date();
+  let day = Number(match[1] || now.getDate());
+  let month = Number(match[2] || now.getMonth() + 1);
+  let year = Number(match[3] || now.getFullYear());
+  let hours = Number(match[4]);
+  const minutes = Number(match[5]);
+  const seconds = Number(match[6] || 0);
+  const meridiem = match[7]?.toUpperCase();
+
+  if (year < 100) {
+    year += 2000;
+  }
+
+  if (month > 12 && day <= 12) {
+    [day, month] = [month, day];
+  }
 
   if (meridiem === 'PM' && hours < 12) {
     hours += 12;
@@ -94,141 +185,286 @@ function parseClockMinutes(value) {
     hours = 0;
   }
 
-  return hours * 60 + minutes;
+  return new Date(year, month - 1, day, hours, minutes, seconds);
 }
 
-function buildReportRows(sheetRows) {
+function pad(value) {
+  return String(value).padStart(2, '0');
+}
+
+function formatClock(date) {
+  if (!(date instanceof Date)) {
+    return '';
+  }
+
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function formatDateKey(date) {
+  if (!(date instanceof Date)) {
+    return '';
+  }
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function formatDuration(milliseconds) {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
+function getPunchDirection(index) {
+  return index % 2 === 0 ? 'IN' : 'OUT';
+}
+
+function isLikelyDateTime(value) {
+  return Boolean(parseDateTime(value));
+}
+
+function countMatches(rows, columnIndex, matcher) {
+  return rows.reduce((count, row) => count + (matcher(row[columnIndex]) ? 1 : 0), 0);
+}
+
+function buildAttendanceReport(logs) {
+  const groups = new Map();
+
+  logs.forEach((log) => {
+    const groupKey = `${log.employeeCode}__${formatDateKey(log.timestamp)}`;
+
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, {
+        employeeCode: log.employeeCode,
+        employeeName: log.employeeName,
+        dateKey: formatDateKey(log.timestamp),
+        punches: [],
+      });
+    }
+
+    groups.get(groupKey).punches.push(log);
+  });
+
+  return Array.from(groups.values()).map((group, groupIndex) => {
+    const punches = group.punches.sort((first, second) => first.timestamp - second.timestamp);
+    let totalLoginMs = 0;
+    let totalBreakMs = 0;
+    let totalIn = 0;
+    let totalOut = 0;
+    let firstIn = null;
+    let lastIn = null;
+    let lastOut = null;
+    let activeIn = null;
+    let previousOut = null;
+
+    punches.forEach((punch, punchIndex) => {
+      const direction = getPunchDirection(punchIndex);
+
+      if (direction === 'IN') {
+        totalIn += 1;
+        activeIn = punch.timestamp;
+        firstIn = firstIn || punch.timestamp;
+        lastIn = punch.timestamp;
+
+        if (previousOut && punch.timestamp > previousOut) {
+          totalBreakMs += punch.timestamp - previousOut;
+        }
+
+        return;
+      }
+
+      totalOut += 1;
+      lastOut = punch.timestamp;
+
+      if (activeIn && punch.timestamp > activeIn) {
+        totalLoginMs += punch.timestamp - activeIn;
+        activeIn = null;
+      }
+
+      previousOut = punch.timestamp;
+    });
+
+    return {
+      originalIndex: groupIndex,
+      sNo: groupIndex + 1,
+      employeeCode: group.employeeCode,
+      employeeName: group.employeeName,
+      totalIn,
+      totalOut,
+      firstIn: formatClock(firstIn),
+      lastIn: formatClock(lastIn),
+      lastOut: formatClock(lastOut),
+      totalLoginTime: formatDuration(totalLoginMs),
+      totalBreakTime: formatDuration(totalBreakMs),
+      dateKey: group.dateKey,
+    };
+  });
+}
+
+function extractPunchLogs(sheetRows) {
   const headerIndex = findHeaderRow(sheetRows);
 
   if (headerIndex === -1) {
-    return sheetRows
-      .filter((row) => row.some((cell) => toCellValue(cell).trim()))
-      .map((row, index) => ({
-        originalIndex: index,
-        sNo: toCellValue(row[0]) || index + 1,
-        employeeCode: toCellValue(row[1]),
-        employeeName: toCellValue(row[2]),
-        totalIn: toCellValue(row[3]),
-        totalOut: toCellValue(row[4]),
-        firstIn: toCellValue(row[5]),
-        lastIn: toCellValue(row[6]),
-        lastOut: toCellValue(row[7]),
-        totalLoginTime: toCellValue(row[8]),
-        totalBreakTime: toCellValue(row[9]),
-      }));
+    return inferPunchLogs(sheetRows);
   }
 
-  const columnMap = createColumnMap(sheetRows[headerIndex]);
-  const dataRows = sheetRows.slice(headerIndex + 1).filter((row) => row.some((cell) => toCellValue(cell).trim()));
-  const hasReportColumns = columnMap.totalLoginTime !== -1 || columnMap.totalBreakTime !== -1;
+  const headers = sheetRows[headerIndex].map(normalizeHeader);
+  const columnMap = {
+    employeeCode: findColumnIndex(headers, 'employeeCode'),
+    employeeName: findColumnIndex(headers, 'employeeName'),
+    punchTimestamp: findColumnIndex(headers, 'punchTimestamp'),
+    punchDate: findColumnIndex(headers, 'punchDate'),
+    punchTime: findColumnIndex(headers, 'punchTime'),
+    punchType: findColumnIndex(headers, 'punchType'),
+  };
 
-  if (hasReportColumns) {
-    return dataRows.map((row, index) => {
-      const getValue = (key) => {
-        const columnIndex = columnMap[key];
-        return columnIndex >= 0 ? toCellValue(row[columnIndex]) : '';
-      };
-
-      return {
-        originalIndex: index,
-        sNo: getValue('sNo') || index + 1,
-        employeeCode: getValue('employeeCode'),
-        employeeName: getValue('employeeName'),
-        totalIn: getValue('totalIn'),
-        totalOut: getValue('totalOut'),
-        firstIn: getValue('firstIn'),
-        lastIn: getValue('lastIn'),
-        lastOut: getValue('lastOut'),
-        totalLoginTime: getValue('totalLoginTime'),
-        totalBreakTime: getValue('totalBreakTime'),
-      };
-    });
+  if (columnMap.employeeCode === -1 && columnMap.employeeName === -1) {
+    throw new Error('Missing employee identity columns.');
   }
 
-  const groups = new Map();
+  if (columnMap.punchTimestamp === -1 && columnMap.punchTime === -1) {
+    throw new Error('Missing punch timestamp columns.');
+  }
 
-  dataRows.forEach((row, index) => {
-    const getValue = (key) => {
-      const columnIndex = columnMap[key];
-      return columnIndex >= 0 ? toCellValue(row[columnIndex]) : '';
-    };
-    const employeeCode = getValue('employeeCode');
-    const employeeName = getValue('employeeName');
-    const groupKey = employeeCode || `${employeeName}__${index}`;
-    const firstIn = getValue('firstIn');
-    const lastOut = getValue('lastOut');
-    const lastIn = getValue('lastIn') || firstIn;
-    const firstInMinutes = parseClockMinutes(firstIn);
-    const lastInMinutes = parseClockMinutes(lastIn);
-    const lastOutMinutes = parseClockMinutes(lastOut);
-    const existing = groups.get(groupKey);
+  return sheetRows.slice(headerIndex + 1).map((row, rowIndex) => {
+    const employeeCode = toCellValue(row[columnMap.employeeCode]);
+    const employeeName = toCellValue(row[columnMap.employeeName]);
+    const timestampValue = columnMap.punchTimestamp >= 0 ? row[columnMap.punchTimestamp] : row[columnMap.punchTime];
+    const dateValue = columnMap.punchDate >= 0 ? row[columnMap.punchDate] : '';
+    const timestamp = parseDateTime(timestampValue, dateValue);
 
-    if (existing) {
-      const existingFirstIn = parseClockMinutes(existing.firstIn);
-      const existingLastIn = parseClockMinutes(existing.lastIn);
-      const existingLastOut = parseClockMinutes(existing.lastOut);
-      const nextFirstIn = existingFirstIn === null || (firstInMinutes !== null && firstInMinutes < existingFirstIn)
-        ? firstIn
-        : existing.firstIn;
-      const nextLastIn = existingLastIn === null || (lastInMinutes !== null && lastInMinutes > existingLastIn)
-        ? lastIn
-        : existing.lastIn;
-      const nextLastOut = existingLastOut === null || (lastOutMinutes !== null && lastOutMinutes > existingLastOut)
-        ? lastOut
-        : existing.lastOut;
-      const loginStart = parseClockMinutes(nextFirstIn);
-      const loginEnd = parseClockMinutes(nextLastOut);
-      const totalLoginMinutes = loginStart !== null && loginEnd !== null && loginEnd >= loginStart
-        ? loginEnd - loginStart
-        : parseDurationMinutes(existing.totalLoginTime);
-
-      groups.set(groupKey, {
-        ...existing,
-        totalIn: String(Number(existing.totalIn || 0) + (firstIn ? 1 : 0)),
-        totalOut: String(Number(existing.totalOut || 0) + (lastOut ? 1 : 0)),
-        firstIn: nextFirstIn,
-        lastIn: nextLastIn,
-        lastOut: nextLastOut,
-        totalLoginTime: formatDuration(totalLoginMinutes),
-      });
-      return;
+    if (!timestamp || (!employeeCode && !employeeName)) {
+      return null;
     }
 
-    const totalLoginMinutes = firstInMinutes !== null && lastOutMinutes !== null && lastOutMinutes >= firstInMinutes
-      ? lastOutMinutes - firstInMinutes
-      : parseDurationMinutes(getValue('totalLoginTime'));
-
-    groups.set(groupKey, {
-      originalIndex: index,
-      sNo: groups.size + 1,
-      employeeCode,
+    return {
+      employeeCode: employeeCode || employeeName,
       employeeName,
-      totalIn: firstIn ? '1' : '',
-      totalOut: lastOut ? '1' : '',
-      firstIn,
-      lastIn,
-      lastOut,
-      totalLoginTime: formatDuration(totalLoginMinutes),
-      totalBreakTime: getValue('totalBreakTime'),
-    });
-  });
+      timestamp,
+      punchType: columnMap.punchType >= 0 ? toCellValue(row[columnMap.punchType]) : '',
+      sourceOrder: rowIndex,
+    };
+  }).filter(Boolean);
+}
 
-  return Array.from(groups.values());
+function extractProcessedReportRows(sheetRows) {
+  const headerIndex = findProcessedReportHeaderRow(sheetRows);
+
+  if (headerIndex === -1) {
+    return null;
+  }
+
+  const headers = sheetRows[headerIndex].map(normalizeHeader);
+  const columnMap = {
+    sNo: findReportColumnIndex(headers, 'sNo'),
+    employeeCode: findReportColumnIndex(headers, 'employeeCode'),
+    employeeName: findReportColumnIndex(headers, 'employeeName'),
+    totalIn: findReportColumnIndex(headers, 'totalIn'),
+    totalOut: findReportColumnIndex(headers, 'totalOut'),
+    firstIn: findReportColumnIndex(headers, 'firstIn'),
+    lastIn: findReportColumnIndex(headers, 'lastIn'),
+    lastOut: findReportColumnIndex(headers, 'lastOut'),
+    totalLoginTime: findReportColumnIndex(headers, 'totalLoginTime'),
+    totalBreakTime: findReportColumnIndex(headers, 'totalBreakTime'),
+  };
+
+  return sheetRows.slice(headerIndex + 1)
+    .filter((row) => row.some((cell) => String(cell || '').trim()))
+    .map((row, index) => ({
+      originalIndex: index,
+      sNo: toCellValue(row[columnMap.sNo]) || index + 1,
+      employeeCode: toCellValue(row[columnMap.employeeCode]),
+      employeeName: toCellValue(row[columnMap.employeeName]),
+      totalIn: toCellValue(row[columnMap.totalIn]),
+      totalOut: toCellValue(row[columnMap.totalOut]),
+      firstIn: toCellValue(row[columnMap.firstIn]),
+      lastIn: toCellValue(row[columnMap.lastIn]),
+      lastOut: toCellValue(row[columnMap.lastOut]),
+      totalLoginTime: toCellValue(row[columnMap.totalLoginTime]),
+      totalBreakTime: toCellValue(row[columnMap.totalBreakTime]),
+    }));
+}
+
+function inferPunchLogs(sheetRows) {
+  const dataRows = sheetRows.filter((row) => row.some((cell) => String(cell || '').trim()));
+  const maxColumns = Math.max(...dataRows.map((row) => row.length));
+  const sampleRows = dataRows.slice(0, 60);
+  const columnScores = Array.from({ length: maxColumns }, (_, columnIndex) => ({
+    columnIndex,
+    dateTimeScore: countMatches(sampleRows, columnIndex, isLikelyDateTime),
+    textScore: countMatches(sampleRows, columnIndex, (value) => {
+      const text = String(value || '').trim();
+      return text.length > 1 && !isLikelyDateTime(value) && !/^\d+(\.\d+)?$/.test(text);
+    }),
+    idScore: countMatches(sampleRows, columnIndex, (value) => {
+      const text = String(value || '').trim();
+      return text.length > 0 && !isLikelyDateTime(value);
+    }),
+  }));
+  const punchColumn = columnScores
+    .filter((column) => column.dateTimeScore > 0)
+    .sort((first, second) => second.dateTimeScore - first.dateTimeScore)[0]?.columnIndex;
+
+  if (punchColumn === undefined) {
+    throw new Error('Could not detect a punch timestamp column in this file.');
+  }
+
+  const nameColumn = columnScores
+    .filter((column) => column.columnIndex !== punchColumn && column.textScore > 0)
+    .sort((first, second) => second.textScore - first.textScore)[0]?.columnIndex;
+  const codeColumn = columnScores
+    .filter((column) => column.columnIndex !== punchColumn && column.columnIndex !== nameColumn && column.idScore > 0)
+    .sort((first, second) => second.idScore - first.idScore)[0]?.columnIndex;
+
+  if (codeColumn === undefined && nameColumn === undefined) {
+    throw new Error('Could not detect employee code or employee name columns in this file.');
+  }
+
+  return dataRows.map((row, rowIndex) => {
+    const timestamp = parseDateTime(row[punchColumn]);
+    const employeeCode = codeColumn !== undefined ? toCellValue(row[codeColumn]) : '';
+    const employeeName = nameColumn !== undefined ? toCellValue(row[nameColumn]) : '';
+
+    if (!timestamp || (!employeeCode && !employeeName)) {
+      return null;
+    }
+
+    return {
+      employeeCode: employeeCode || employeeName,
+      employeeName,
+      timestamp,
+      punchType: '',
+      sourceOrder: rowIndex,
+    };
+  }).filter(Boolean);
 }
 
 async function readAttendanceFile(file) {
   const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: 'array', cellDates: false });
+  const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
   const firstSheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[firstSheetName];
   const sheetRows = XLSX.utils.sheet_to_json(worksheet, {
     header: 1,
-    raw: false,
+    raw: true,
     defval: '',
     blankrows: false,
   });
+  const processedReportRows = extractProcessedReportRows(sheetRows);
 
-  return buildReportRows(sheetRows);
+  if (processedReportRows) {
+    return processedReportRows;
+  }
+
+  const logs = extractPunchLogs(sheetRows);
+
+  if (!logs.length) {
+    throw new Error('No valid punch rows found in this file.');
+  }
+
+  return buildAttendanceReport(logs);
 }
 
 export default function UploadWorkspace() {
@@ -252,8 +488,8 @@ export default function UploadWorkspace() {
       await new Promise((resolve) => window.setTimeout(resolve, 450));
       const parsedRows = await readAttendanceFile(file);
       setRows(parsedRows);
-    } catch {
-      setError('Unable to process this file. Please upload a valid .xls, .xlsx, or .csv attendance export.');
+    } catch (processingError) {
+      setError(processingError.message || 'Unable to process this file. Please upload a valid biometric punch export.');
     } finally {
       setIsProcessing(false);
     }

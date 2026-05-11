@@ -16,14 +16,6 @@ export default function TopNavbar() {
     <header className="sticky top-0 w-full z-40 bg-surface/70 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm flex justify-between items-center h-xl px-lg">
       <div className="flex items-center gap-lg">
         <h2 className="font-headline-sm text-headline-sm font-black text-primary">Attendance Portal</h2>
-        <div className="relative w-80">
-          <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-          <input
-            className="w-full bg-surface-container-low border-none rounded-full py-xs pl-xl pr-md text-body-sm focus:ring-2 focus:ring-secondary/20 transition-all outline-none"
-            placeholder="Search employees..."
-            type="text"
-          />
-        </div>
       </div>
       <div className="flex items-center gap-md">
         <button className="p-xs hover:bg-surface-container-highest rounded-full transition-all">
@@ -40,6 +32,7 @@ export default function TopNavbar() {
               alt="Admin Avatar"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9qhZOj6bBNPOVD34oiJ3WviYx84Ej_RgfwD049W_p4axw4QWS1t2jOqafmg8p3fUg7ZLinbQgZsx9BTD6w7y2kabvH39XbvroeGYf5gKjgejNB1CM4ZwbXOezxgavB8CrJqr6g-TVw3bWY0UxXPN0pOkYxYZrtl_NrA8QONPpJ-dnVHj8TaMcA4X3GlGfNT2dDEkOsTJOPg4znkIAXYSUkNYMBP0IAqdOcBJKOn7SAh1ju-je8l8-6yq1jlYpGGWi4LQDlGfSG2c"
               fill
+              sizes="32px"
               className="object-cover"
             />
           </button>

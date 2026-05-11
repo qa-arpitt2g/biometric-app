@@ -79,15 +79,15 @@ export function GuidelinesCard() {
         <ul className="space-y-sm text-body-sm text-on-surface-variant">
           <li className="flex gap-sm">
             <span className="material-symbols-outlined text-secondary-fixed-variant text-[20px]">check_circle</span>
-            Ensure column headers match: EmployeeID, Date, CheckIn, CheckOut.
+            Include Employee Code, Employee Name, and punch timestamp columns.
           </li>
           <li className="flex gap-sm">
             <span className="material-symbols-outlined text-secondary-fixed-variant text-[20px]">check_circle</span>
-            Dates must follow YYYY-MM-DD format.
+            Date and time can be combined or provided as separate Excel columns.
           </li>
           <li className="flex gap-sm">
             <span className="material-symbols-outlined text-secondary-fixed-variant text-[20px]">check_circle</span>
-            Duplicate entries will be automatically flagged for review.
+            Multiple punches are paired sequentially to calculate login and break time.
           </li>
         </ul>
         <button className="mt-lg w-full py-xs border border-secondary text-secondary rounded-lg font-bold text-body-sm hover:bg-secondary/5 transition-all">
@@ -99,6 +99,7 @@ export function GuidelinesCard() {
           alt="Data Analytics"
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcS7NczTqNgiVBTIc4l9PQsFHuEuRYGpQVuPp6gESC95vhreXn5cTCsjG4PBYE5a9k81YwHRhR-kUXOf1qbyYIlVD5Aloh3FN8zrYpZ83AfJlpz9iXLkXnw_cqaZE3hWVdE3GwWvMh8WTDwIh2O2T6OUj_i1OCLFJi3ucG2BuikN98zpcQKVBqqeyDQAnhQA4XxZxtqRD2ftcEO1_KsFz2XYaj8a1ED9Pg9p4vHgzPrZSOSgo5TFHnZgFwq4j7Ti-E5tvuOpIw7xU"
           fill
+          sizes="(min-width: 1024px) 25vw, 100vw"
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent flex items-end p-md">

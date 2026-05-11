@@ -93,7 +93,7 @@ export default function EmailReportModal({ isOpen, onClose, onSent }) {
             </div>
             <div>
               <h4 id="send-report-title" className="font-title-lg text-title-lg text-primary">Send Report via Email</h4>
-              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Monthly Summary Report</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Summary Report</p>
             </div>
           </div>
           <button
