@@ -1,7 +1,6 @@
 import Sidebar from '@/components/Sidebar';
 import TopNavbar from '@/components/TopNavbar';
-import { UploadCard, GuidelinesCard } from '@/components/UploadSection';
-import UploadHistory from '@/components/UploadHistory';
+import UploadWorkspace from '@/components/UploadWorkspace';
 
 export const metadata = {
   title: 'Upload Attendance - Tech2Globe',
@@ -24,14 +23,7 @@ export default function UploadPage() {
             </p>
           </div>
 
-          {/* Bento Layout for Upload & Guidelines */}
-          <div className="grid grid-cols-12 gap-gutter mb-xl">
-            <UploadCard />
-            <GuidelinesCard />
-          </div>
-
-          {/* Upload History Section */}
-          <UploadHistory />
+          <UploadWorkspace />
         </div>
       </main>
     </div>

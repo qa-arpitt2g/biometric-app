@@ -1,42 +1,67 @@
 import Image from 'next/image';
 
-export function UploadCard() {
+export function UploadCard({
+  selectedFile,
+  uploadProgress = 0,
+  isProcessing = false,
+  onFileSelect,
+  onClearFile,
+  onProcess,
+}) {
+  const fileName = selectedFile?.name || 'No file selected';
+
   return (
     <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-lg shadow-[0px_4px_20px_rgba(26,43,76,0.05)]">
-      <div className="border-2 border-dashed border-secondary/30 bg-surface-container-low/30 rounded-xl p-xl flex flex-col items-center justify-center text-center group hover:border-secondary transition-all cursor-pointer">
+      <label className="border-2 border-dashed border-secondary/30 bg-surface-container-low/30 rounded-xl p-xl flex flex-col items-center justify-center text-center group hover:border-secondary transition-all cursor-pointer">
+        <input
+          type="file"
+          accept=".csv,.xlsx,.xls"
+          className="sr-only"
+          onChange={(event) => onFileSelect?.(event.target.files?.[0])}
+        />
         <div className="w-16 h-16 bg-secondary-container/50 rounded-full flex items-center justify-center mb-md group-hover:scale-110 transition-transform">
           <span className="material-symbols-outlined text-secondary text-4xl">upload_file</span>
         </div>
         <h4 className="font-title-lg text-title-lg text-primary mb-xs">Drag & drop your files here</h4>
         <p className="font-body-sm text-body-sm text-on-surface-variant mb-md">Maximum file size: 25MB. Supported formats: .csv, .xlsx</p>
-        <button className="px-lg py-sm bg-primary text-on-primary rounded-lg font-bold hover:shadow-lg transition-all active:scale-[0.98]">
+        <span className="px-lg py-sm bg-primary text-on-primary rounded-lg font-bold hover:shadow-lg transition-all active:scale-[0.98]">
           Browse Files
-        </button>
-      </div>
+        </span>
+      </label>
 
-      {/* File Validation UI (Active state mock) */}
       <div className="mt-lg p-md bg-surface-container-high/20 rounded-lg border border-outline-variant/20 flex items-center gap-md">
         <div className="p-xs bg-secondary-container/30 rounded">
           <span className="material-symbols-outlined text-secondary">description</span>
         </div>
         <div className="flex-1">
           <div className="flex justify-between items-center mb-xs">
-            <span className="font-body-md text-body-md font-semibold text-primary">Biometric_Logs_June_2024.xlsx</span>
-            <span className="font-label-caps text-label-caps text-secondary">65%</span>
+            <span className="font-body-md text-body-md font-semibold text-primary truncate">{fileName}</span>
+            <span className="font-label-caps text-label-caps text-secondary">{uploadProgress}%</span>
           </div>
           <div className="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
-            <div className="bg-secondary h-full" style={{ width: '65%' }}></div>
+            <div className="bg-secondary h-full transition-all duration-500" style={{ width: `${uploadProgress}%` }}></div>
           </div>
         </div>
-        <button className="p-xs hover:bg-error-container/20 text-error rounded-full transition-colors">
+        <button
+          className="p-xs hover:bg-error-container/20 text-error rounded-full transition-colors disabled:opacity-30"
+          disabled={!selectedFile || isProcessing}
+          onClick={onClearFile}
+          type="button"
+          aria-label="Clear selected file"
+        >
           <span className="material-symbols-outlined">close</span>
         </button>
       </div>
 
       <div className="mt-lg flex justify-end">
-        <button className="px-xl py-sm bg-secondary text-on-secondary rounded-lg font-bold shadow-md hover:bg-secondary-fixed-dim/90 transition-all active:scale-[0.98] flex items-center gap-sm">
+        <button
+          className="px-xl py-sm bg-secondary text-on-secondary rounded-lg font-bold shadow-md hover:bg-secondary-fixed-dim/90 transition-all active:scale-[0.98] flex items-center gap-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!selectedFile || isProcessing}
+          onClick={onProcess}
+          type="button"
+        >
           <span className="material-symbols-outlined">bolt</span>
-          Process Attendance
+          {isProcessing ? 'Processing...' : 'Process Attendance'}
         </button>
       </div>
     </div>

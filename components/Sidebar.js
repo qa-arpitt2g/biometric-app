@@ -5,8 +5,6 @@ export default function Sidebar() {
   const navItems = [
     { name: 'Dashboard', icon: 'dashboard', href: '#', active: false },
     { name: 'Upload', icon: 'cloud_upload', href: '/upload', active: true },
-    { name: 'Attendance Records', icon: 'event_available', href: '#', active: false },
-    { name: 'Reports', icon: 'assessment', href: '#', active: false },
   ];
 
   return (
@@ -32,12 +30,6 @@ export default function Sidebar() {
           </Link>
         ))}
       </nav>
-
-      <div className="mt-auto pt-md space-y-xs">
-        <button className="w-full mb-md py-sm px-md bg-secondary text-on-secondary rounded-lg font-bold shadow-md hover:bg-secondary-fixed-dim/90 transition-all active:scale-[0.98]">
-          Generate Report
-        </button>
-      </div>
     </aside>
   );
 }
