@@ -141,7 +141,7 @@ export default function EmailReportModal({ isOpen, onClose, onSent }) {
                     setError('');
                   }
                 }}
-                placeholder="admin@workflowhr.com"
+                placeholder="Enter The Recipient Email"
                 aria-invalid={Boolean(error)}
                 aria-describedby={error ? 'email-error' : undefined}
               />
