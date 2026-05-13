@@ -168,7 +168,7 @@ function getCellStyle(columnKey, row) {
 
 function buildReportHtml(rows, fileName) {
   const header = `<div style="font-family:Arial, sans-serif;color:#111;margin-bottom:0.5rem;">
-      <h2 style="margin:0;font-size:18px;font-weight:700;">Processed Attendance Report</h2>
+      <h2 style="margin:0;font-size:18px;font-weight:700;">Attendance Report</h2>
     </div>`;
 
   const tableHeader = `<tr>${attendanceColumns.map((column) => `
