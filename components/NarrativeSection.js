@@ -31,8 +31,8 @@ export default function NarrativeSection() {
 
         <div className="mb-6">
           <h2 className="text-[30px] lg:text-[36px] font-bold text-white mb-4 leading-tight tracking-tight">
-            It's not about what you make.<br />
-            <span className="text-secondary-container">It's about what you make possible.</span>
+            It&apos;s not about what you make.<br />
+            <span className="text-secondary-container">It&apos;s about what you make possible.</span>
           </h2>
         </div>
       </div>

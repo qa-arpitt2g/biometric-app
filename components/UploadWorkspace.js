@@ -7,11 +7,15 @@ import { GuidelinesCard, UploadCard } from '@/components/UploadSection';
 
 const headerAliases = {
   employeeCode: ['employee code', 'employeecode', 'employee id', 'employeeid', 'emp code', 'emp id', 'emp no', 'employee no', 'enroll no', 'enrollment no', 'person id', 'personid', 'staff id', 'staff code', 'user id', 'userid', 'user no', 'code', 'id'],
-  employeeName: ['employeename', 'employee name', 'emp name', 'employee', 'person name', 'staff name', 'user name', 'username', 'name'],
+  // NOTE: keep these specific; a generic alias like "employee" can match
+  // "employee code" and incorrectly map the name column to the code column.
+  employeeName: ['employeename', 'employee name', 'emp name', 'empname', 'person name', 'staff name', 'user name', 'username', 'name'],
   punchTimestamp: ['punch timestamp', 'punchtimestamp', 'punch time', 'punchtime', 'timestamp', 'date time', 'datetime', 'date/time', 'punch date time', 'punch datetime', 'attendance time', 'log time', 'log datetime', 'record time', 'event time', 'verify time', 'scan time'],
   punchDate: ['date', 'punch date', 'attendance date', 'log date', 'record date', 'event date', 'verify date'],
-  punchTime: ['time', 'punch', 'punch time', 'attendance time', 'log time', 'record time', 'event time', 'verify time', 'scan time'],
+  // Avoid bare "time" — it matches unrelated columns like "A. InTime" on summary exports and breaks detection.
+  punchTime: ['punch', 'punch time', 'log time', 'record time', 'event time', 'verify time', 'scan time'],
   punchType: ['in out', 'inout', 'in/out', 'i o', 'io', 'direction', 'status', 'punch type', 'punchtype', 'type', 'state'],
+  punchRecords: ['punch records', 'punch record', 'punchrecords', 'raw punches', 'punches'],
 };
 
 const reportAliases = {
@@ -61,6 +65,10 @@ function findHeaderRow(rows) {
 
 function findColumnIndex(headers, key) {
   const aliases = headerAliases[key];
+  if (!aliases) {
+    return -1;
+  }
+
   return headers.findIndex((header) => aliases.some((alias) => matchesHeader(header, alias)));
 }
 
@@ -200,6 +208,14 @@ function formatClock(date) {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
+function formatClockHm(date) {
+  if (!(date instanceof Date)) {
+    return '';
+  }
+
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 function formatDateKey(date) {
   if (!(date instanceof Date)) {
     return '';
@@ -219,6 +235,229 @@ function formatDuration(milliseconds) {
 
 function getPunchDirection(index) {
   return index % 2 === 0 ? 'IN' : 'OUT';
+}
+
+function normalizePunchType(raw) {
+  const compact = String(raw || '').trim().toUpperCase().replace(/\s+/g, '');
+
+  if (compact === 'IN' || compact === 'I') {
+    return 'IN';
+  }
+
+  if (compact === 'OUT' || compact === 'O') {
+    return 'OUT';
+  }
+
+  if (compact === 'CHECKIN' || compact === 'C/IN') {
+    return 'IN';
+  }
+
+  if (compact === 'CHECKOUT' || compact === 'C/OUT') {
+    return 'OUT';
+  }
+
+  return '';
+}
+
+function resolvePunchDirections(punches) {
+  return punches.map((punch, index) => {
+    const resolved = normalizePunchType(punch.punchType);
+
+    if (resolved) {
+      return resolved;
+    }
+
+    return getPunchDirection(index);
+  });
+}
+
+function parsePunchRecordsTokens(text, dateParsed) {
+  const base = dateParsed instanceof Date && !Number.isNaN(dateParsed.getTime()) ? dateParsed : null;
+  const results = [];
+  const re = /(\d{1,2}):(\d{2})(?::(\d{2}))?\s*\(\s*(in|out)\s*\)/gi;
+  let match = re.exec(String(text || ''));
+
+  while (match !== null) {
+    const hours = Number(match[1]);
+    const minutes = Number(match[2]);
+    const seconds = Number(match[3] || 0);
+    const direction = match[4].toUpperCase() === 'IN' ? 'IN' : 'OUT';
+    let timestamp;
+
+    if (base) {
+      timestamp = new Date(base.getFullYear(), base.getMonth(), base.getDate(), hours, minutes, seconds);
+    } else {
+      const now = new Date();
+      timestamp = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, seconds);
+    }
+
+    results.push({ timestamp, direction });
+    match = re.exec(String(text || ''));
+  }
+
+  return results;
+}
+
+function findPunchRecordsSummaryHeaderRow(rows) {
+  return rows.findIndex((row) => {
+    const normalized = row.map(normalizeHeader);
+    const punchRecordsIndex = findColumnIndex(normalized, 'punchRecords');
+    const hasEmployee = findColumnIndex(normalized, 'employeeCode') >= 0
+      || findColumnIndex(normalized, 'employeeName') >= 0;
+
+    return punchRecordsIndex >= 0 && hasEmployee;
+  });
+}
+
+function buildAttendanceReportFromPunchRecordsExport(sheetRows) {
+  const headerIndex = findPunchRecordsSummaryHeaderRow(sheetRows);
+
+  if (headerIndex === -1) {
+    return null;
+  }
+
+  const headers = sheetRows[headerIndex].map(normalizeHeader);
+  const columnMap = {
+    employeeCode: findColumnIndex(headers, 'employeeCode'),
+    employeeName: findColumnIndex(headers, 'employeeName'),
+    punchRecords: findColumnIndex(headers, 'punchRecords'),
+    punchDate: findColumnIndex(headers, 'punchDate'),
+  };
+
+  if (columnMap.punchRecords < 0 || (columnMap.employeeCode < 0 && columnMap.employeeName < 0)) {
+    return null;
+  }
+
+  const reportRows = [];
+
+  sheetRows.slice(headerIndex + 1).forEach((row) => {
+    if (!row.some((cell) => String(cell || '').trim())) {
+      return;
+    }
+
+    const employeeCode = columnMap.employeeCode >= 0 ? toCellValue(row[columnMap.employeeCode]) : '';
+    const employeeName = columnMap.employeeName >= 0 ? toCellValue(row[columnMap.employeeName]) : '';
+
+    if (!employeeCode && !employeeName) {
+      return;
+    }
+
+    const dateValue = columnMap.punchDate >= 0 ? row[columnMap.punchDate] : '';
+    const dateParsed = parseDateOnly(dateValue);
+    const dateKey = dateParsed ? formatDateKey(dateParsed) : '';
+    const punchRecordsRaw = toCellValue(row[columnMap.punchRecords]);
+    const tokens = parsePunchRecordsTokens(punchRecordsRaw, dateParsed);
+    const punches = tokens.map((entry, index) => ({
+      timestamp: entry.timestamp,
+      punchType: entry.direction,
+      sourceOrder: index,
+    }));
+
+    reportRows.push({
+      employeeCode: employeeCode || employeeName,
+      employeeName,
+      dateKey,
+      punches,
+    });
+  });
+
+  return reportRows.map((group, groupIndex) => summarizeAttendanceGroup(group, groupIndex));
+}
+
+function summarizeAttendanceGroup(group, groupIndex) {
+  const { employeeCode, employeeName, dateKey, punches: rawPunches } = group;
+  const punches = [...rawPunches].sort((first, second) => {
+    const delta = first.timestamp - second.timestamp;
+
+    if (delta !== 0) {
+      return delta;
+    }
+
+    return (first.sourceOrder ?? 0) - (second.sourceOrder ?? 0);
+  });
+
+  if (!punches.length) {
+    return {
+      originalIndex: groupIndex,
+      sNo: groupIndex + 1,
+      employeeCode,
+      employeeName,
+      totalIn: 0,
+      totalOut: 0,
+      firstIn: '',
+      lastIn: '',
+      lastOut: '',
+      totalLoginTime: '00:00:00',
+      totalBreakTime: '00:00:00',
+      dateKey,
+    };
+  }
+
+  const directions = resolvePunchDirections(punches);
+  let totalIn = 0;
+  let totalOut = 0;
+  let firstIn = null;
+  let lastIn = null;
+  let lastOut = null;
+
+  punches.forEach((punch, index) => {
+    const direction = directions[index];
+
+    if (direction === 'IN') {
+      totalIn += 1;
+      firstIn = firstIn || punch.timestamp;
+      lastIn = punch.timestamp;
+
+      return;
+    }
+
+    totalOut += 1;
+    lastOut = punch.timestamp;
+  });
+
+  let totalLoginMs = 0;
+
+  if (firstIn && lastOut && lastOut >= firstIn) {
+    totalLoginMs = lastOut - firstIn;
+  }
+
+  let totalBreakMs = 0;
+  let pendingOut = null;
+  let seenIn = false;
+
+  punches.forEach((punch, index) => {
+    const direction = directions[index];
+
+    if (direction === 'IN') {
+      if (pendingOut !== null && seenIn && punch.timestamp > pendingOut) {
+        totalBreakMs += punch.timestamp - pendingOut;
+      }
+
+      pendingOut = null;
+      seenIn = true;
+
+      return;
+    }
+
+    if (direction === 'OUT' && seenIn) {
+      pendingOut = punch.timestamp;
+    }
+  });
+
+  return {
+    originalIndex: groupIndex,
+    sNo: groupIndex + 1,
+    employeeCode,
+    employeeName,
+    totalIn,
+    totalOut,
+    firstIn: formatClockHm(firstIn),
+    lastIn: formatClockHm(lastIn),
+    lastOut: formatClockHm(lastOut),
+    totalLoginTime: formatDuration(totalLoginMs),
+    totalBreakTime: formatDuration(totalBreakMs),
+    dateKey,
+  };
 }
 
 function isLikelyDateTime(value) {
@@ -244,63 +483,14 @@ function buildAttendanceReport(logs) {
       });
     }
 
-    groups.get(groupKey).punches.push(log);
-  });
-
-  return Array.from(groups.values()).map((group, groupIndex) => {
-    const punches = group.punches.sort((first, second) => first.timestamp - second.timestamp);
-    let totalLoginMs = 0;
-    let totalBreakMs = 0;
-    let totalIn = 0;
-    let totalOut = 0;
-    let firstIn = null;
-    let lastIn = null;
-    let lastOut = null;
-    let activeIn = null;
-    let previousOut = null;
-
-    punches.forEach((punch, punchIndex) => {
-      const direction = getPunchDirection(punchIndex);
-
-      if (direction === 'IN') {
-        totalIn += 1;
-        activeIn = punch.timestamp;
-        firstIn = firstIn || punch.timestamp;
-        lastIn = punch.timestamp;
-
-        if (previousOut && punch.timestamp > previousOut) {
-          totalBreakMs += punch.timestamp - previousOut;
-        }
-
-        return;
-      }
-
-      totalOut += 1;
-      lastOut = punch.timestamp;
-
-      if (activeIn && punch.timestamp > activeIn) {
-        totalLoginMs += punch.timestamp - activeIn;
-        activeIn = null;
-      }
-
-      previousOut = punch.timestamp;
+    groups.get(groupKey).punches.push({
+      timestamp: log.timestamp,
+      punchType: log.punchType,
+      sourceOrder: log.sourceOrder,
     });
-
-    return {
-      originalIndex: groupIndex,
-      sNo: groupIndex + 1,
-      employeeCode: group.employeeCode,
-      employeeName: group.employeeName,
-      totalIn,
-      totalOut,
-      firstIn: formatClock(firstIn),
-      lastIn: formatClock(lastIn),
-      lastOut: formatClock(lastOut),
-      totalLoginTime: formatDuration(totalLoginMs),
-      totalBreakTime: formatDuration(totalBreakMs),
-      dateKey: group.dateKey,
-    };
   });
+
+  return Array.from(groups.values()).map((group, groupIndex) => summarizeAttendanceGroup(group, groupIndex));
 }
 
 function extractPunchLogs(sheetRows) {
@@ -369,6 +559,29 @@ function extractProcessedReportRows(sheetRows) {
     totalLoginTime: findReportColumnIndex(headers, 'totalLoginTime'),
     totalBreakTime: findReportColumnIndex(headers, 'totalBreakTime'),
   };
+
+  // Guard against false positives: some biometric summary exports may contain a
+  // header-like row, but no computed values in these columns. In that case we
+  // want to fall back to parsing Punch Records / raw logs instead of returning
+  // a blank report.
+  const probeRows = sheetRows.slice(headerIndex + 1, headerIndex + 31).filter((row) => row.some((cell) => String(cell || '').trim()));
+  const hasComputedData = probeRows.some((row) => {
+    const values = [
+      row[columnMap.totalIn],
+      row[columnMap.totalOut],
+      row[columnMap.firstIn],
+      row[columnMap.lastIn],
+      row[columnMap.lastOut],
+      row[columnMap.totalLoginTime],
+      row[columnMap.totalBreakTime],
+    ];
+
+    return values.some((value) => String(value || '').trim());
+  });
+
+  if (!hasComputedData) {
+    return null;
+  }
 
   return sheetRows.slice(headerIndex + 1)
     .filter((row) => row.some((cell) => String(cell || '').trim()))
@@ -456,6 +669,12 @@ async function readAttendanceFile(file) {
 
   if (processedReportRows) {
     return processedReportRows;
+  }
+
+  const punchRecordsReport = buildAttendanceReportFromPunchRecordsExport(sheetRows);
+
+  if (punchRecordsReport) {
+    return punchRecordsReport;
   }
 
   const logs = extractPunchLogs(sheetRows);

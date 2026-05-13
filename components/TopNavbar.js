@@ -1,5 +1,4 @@
 "use client";
-import Image from 'next/image';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -7,9 +6,47 @@ export default function TopNavbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const router = useRouter();
 
-  const handleSignOut = () => {
-    // Redirect to login page
-    router.push('/');
+  const handleSignOut = async () => {
+    try {
+      // Call sign-out API to clear server-side session
+      const response = await fetch('/api/auth/signout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to sign out');
+      }
+
+      // Clear all client-side session/auth data
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Delete all cookies manually (including auth tokens)
+      const cookies = document.cookie.split(';');
+      cookies.forEach((cookie) => {
+        const eqPos = cookie.indexOf('=');
+        const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      });
+
+      // Log sign-out for security audit
+      console.log('[SECURITY] Session terminated at', new Date().toISOString());
+
+      // Close dropdown before redirecting
+      setIsDropdownOpen(false);
+
+      // Redirect to login page with a delay to ensure cleanup
+      setTimeout(() => {
+        router.push('/');
+      }, 300);
+    } catch (error) {
+      console.error('[ERROR] Sign-out failed:', error);
+      // Still redirect to login on error
+      router.push('/');
+    }
   };
 
   return (
@@ -26,15 +63,9 @@ export default function TopNavbar() {
         <div className="relative">
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="h-8 w-8 rounded-full overflow-hidden border border-outline-variant/50 relative hover:ring-2 hover:ring-secondary/20 transition-all"
+            className="h-8 w-8 rounded-full overflow-hidden border border-outline-variant/50 relative hover:ring-2 hover:ring-secondary/20 transition-all bg-surface-container-highest flex items-center justify-center"
           >
-            <Image
-              alt="Admin Avatar"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9qhZOj6bBNPOVD34oiJ3WviYx84Ej_RgfwD049W_p4axw4QWS1t2jOqafmg8p3fUg7ZLinbQgZsx9BTD6w7y2kabvH39XbvroeGYf5gKjgejNB1CM4ZwbXOezxgavB8CrJqr6g-TVw3bWY0UxXPN0pOkYxYZrtl_NrA8QONPpJ-dnVHj8TaMcA4X3GlGfNT2dDEkOsTJOPg4znkIAXYSUkNYMBP0IAqdOcBJKOn7SAh1ju-je8l8-6yq1jlYpGGWi4LQDlGfSG2c"
-              fill
-              sizes="32px"
-              className="object-cover"
-            />
+            <span className="material-symbols-outlined text-primary text-[20px]">logout</span>
           </button>
 
           {/* Dropdown Menu */}

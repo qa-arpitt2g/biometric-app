@@ -6,10 +6,25 @@ function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-function sendReportEmail() {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, 1200);
+async function sendReportEmail({ email, note, reportData }) {
+  const response = await fetch('/api/send-email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email,
+      note,
+      reportData,
+    }),
   });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.details || error.error || 'Failed to send email');
+  }
+
+  return response.json();
 }
 
 export default function EmailReportModal({ isOpen, onClose, onSent }) {
@@ -63,10 +78,14 @@ export default function EmailReportModal({ isOpen, onClose, onSent }) {
 
     setError('');
     setIsSending(true);
-    await sendReportEmail({ email, note });
-    setIsSending(false);
-    handleClose();
-    onSent?.();
+    try {
+      await sendReportEmail({ email, note });
+      handleClose();
+      onSent?.();
+    } catch (err) {
+      setError(err.message || 'Failed to send email. Please try again.');
+      setIsSending(false);
+    }
   }
 
   if (!isOpen) {
