@@ -6,14 +6,21 @@ function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-async function sendReportEmail({ email, note, reportHtml }) {
+function parseEmails(value) {
+  return value
+    .split(',')
+    .map((email) => email.trim())
+    .filter((email) => email.length > 0);
+}
+
+async function sendReportEmail({ emails, note, reportHtml }) {
   const response = await fetch('/api/send-email', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      email,
+      emails,
       note,
       reportHtml,
     }),
@@ -67,19 +74,26 @@ export default function EmailReportModal({ isOpen, onClose, onSent, reportHtml }
     event.preventDefault();
 
     if (!email.trim()) {
-      setError('Recipient email is required.');
+      setError('At least one recipient email is required.');
       return;
     }
 
-    if (!isValidEmail(email)) {
-      setError('Enter a valid email address.');
+    const emails = parseEmails(email);
+    if (emails.length === 0) {
+      setError('Please enter at least one valid email address.');
+      return;
+    }
+
+    const invalidEmails = emails.filter((e) => !isValidEmail(e));
+    if (invalidEmails.length > 0) {
+      setError(`Invalid email address(es): ${invalidEmails.join(', ')}`);
       return;
     }
 
     setError('');
     setIsSending(true);
     try {
-      await sendReportEmail({ email, note, reportHtml });
+      await sendReportEmail({ emails, note, reportHtml });
       handleClose();
       onSent?.();
     } catch (err) {
@@ -127,7 +141,8 @@ export default function EmailReportModal({ isOpen, onClose, onSent, reportHtml }
 
         <form className="p-md space-y-md" onSubmit={handleSubmit} noValidate>
           <label className="block">
-            <span className="font-body-sm text-body-sm font-semibold text-primary">Recipient Email Address</span>
+            <span className="font-body-sm text-body-sm font-semibold text-primary">Recipient Email Address(es)</span>
+            <p className="font-body-xs text-body-xs text-on-surface-variant mt-1">Enter one or more emails separated by commas</p>
             <div className={`mt-xs flex items-center gap-xs rounded-lg border bg-white px-sm py-sm transition-colors ${error ? 'border-error' : 'border-outline-variant/40 focus-within:border-secondary'}`}>
               <span className="material-symbols-outlined text-on-surface-variant text-[20px]">alternate_email</span>
               <input

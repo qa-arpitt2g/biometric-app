@@ -3,12 +3,21 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const { email, note, reportHtml } = await request.json();
+    const { emails, note, reportHtml } = await request.json();
 
-    // Validate email
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!Array.isArray(emails) || emails.length === 0) {
       return NextResponse.json(
-        { error: 'Invalid email address' },
+        { error: 'At least one recipient email is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate all emails
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const invalidEmails = emails.filter((email) => !emailRegex.test(String(email).trim()));
+    if (invalidEmails.length > 0) {
+      return NextResponse.json(
+        { error: `Invalid email address(es): ${invalidEmails.join(', ')}` },
         { status: 400 }
       );
     }
@@ -56,7 +65,7 @@ export async function POST(request) {
 
     const mailOptions = {
       from: emailFrom,
-      to: email,
+      to: emails.map((e) => String(e).trim()).join(', '),
       subject: 'Biometric Attendance Report',
       html: emailContent,
     };
@@ -64,7 +73,7 @@ export async function POST(request) {
     const info = await transporter.sendMail(mailOptions);
 
     return NextResponse.json(
-      { message: 'Email sent successfully', messageId: info.messageId },
+      { message: `Email sent successfully to ${emails.length} recipient(s)`, messageId: info.messageId },
       { status: 200 }
     );
   } catch (error) {
