@@ -50,6 +50,7 @@ export default function LoginForm() {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -60,13 +61,13 @@ export default function LoginForm() {
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({ error: 'Invalid server response' }));
 
       if (!response.ok) {
         if (response.status === 429) {
-          setError(`${data.error}`);
+          setError(data.error || 'Too many login attempts. Please try again later.');
         } else if (response.status === 401) {
-          setError(data.error);
+          setError(data.error || 'Invalid email or password');
           if (data.attemptsRemaining !== undefined) {
             setAttemptsRemaining(data.attemptsRemaining);
           }
@@ -77,25 +78,16 @@ export default function LoginForm() {
         return;
       }
 
-      // Store session token
-      localStorage.setItem('authToken', data.sessionToken);
-      localStorage.setItem('userEmail', data.user.email);
-      localStorage.setItem('userRole', data.user.role);
-      localStorage.setItem('loginTime', new Date().toISOString());
-
-      // Log successful login
-      console.log('[SECURITY] User authenticated:', data.user.email);
-
-      // Clear form
+      // Clear sensitive inputs after successful authentication
       setEmail('');
       setPassword('');
       setError('');
       setAttemptsRemaining(null);
+      setLoading(false);
 
-      // Redirect to dashboard
-      setTimeout(() => {
-        router.push('/upload');
-      }, 500);
+      console.log('[SECURITY] User authenticated:', data.user?.email || 'admin');
+
+      router.push('/upload');
     } catch (err) {
       console.error('[ERROR] Login error:', err);
       setError('An error occurred. Please try again.');

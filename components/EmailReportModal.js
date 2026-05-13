@@ -6,7 +6,7 @@ function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-async function sendReportEmail({ email, note, reportData }) {
+async function sendReportEmail({ email, note, reportHtml }) {
   const response = await fetch('/api/send-email', {
     method: 'POST',
     headers: {
@@ -15,7 +15,7 @@ async function sendReportEmail({ email, note, reportData }) {
     body: JSON.stringify({
       email,
       note,
-      reportData,
+      reportHtml,
     }),
   });
 
@@ -27,7 +27,7 @@ async function sendReportEmail({ email, note, reportData }) {
   return response.json();
 }
 
-export default function EmailReportModal({ isOpen, onClose, onSent }) {
+export default function EmailReportModal({ isOpen, onClose, onSent, reportHtml }) {
   const [email, setEmail] = useState('');
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
@@ -79,7 +79,7 @@ export default function EmailReportModal({ isOpen, onClose, onSent }) {
     setError('');
     setIsSending(true);
     try {
-      await sendReportEmail({ email, note });
+      await sendReportEmail({ email, note, reportHtml });
       handleClose();
       onSent?.();
     } catch (err) {

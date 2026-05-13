@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const { email, note, reportData } = await request.json();
+    const { email, note, reportHtml } = await request.json();
 
     // Validate email
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -13,40 +13,52 @@ export async function POST(request) {
       );
     }
 
-    // Create transporter using environment variables
+    const emailUser = process.env.EMAIL_USER;
+    const emailPassword = process.env.EMAIL_PASSWORD;
+    const emailService = process.env.EMAIL_SERVICE || 'gmail';
+    const emailFrom = process.env.EMAIL_FROM || emailUser;
+
+    if (!emailUser || !emailPassword) {
+      console.error('[ERROR] Missing email environment variables');
+      return NextResponse.json(
+        { error: 'Email sender is not configured' },
+        { status: 500 }
+      );
+    }
+
     const transporter = nodemailer.createTransport({
-      service: process.env.EMAIL_SERVICE || 'gmail',
+      service: emailService,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
+        user: emailUser,
+        pass: emailPassword,
       },
     });
 
-    // Verify connection (optional but recommended)
     await transporter.verify();
 
-    // Prepare email content
-    const emailContent = `
-      <h2>Biometric Attendance Report</h2>
-      <p>Please find the attendance report attached to this email.</p>
-      ${note ? `<h3>Note from sender:</h3><p>${note}</p>` : ''}
-      <p><strong>This report contains sensitive PII data and has been encrypted during transit.</strong></p>
-      <hr/>
-      <p>Generated on: ${new Date().toLocaleString()}</p>
+    const sanitizedNote = note ? String(note).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+    const bodyHtml = reportHtml || `
+      <div style="font-family:Arial,sans-serif;color:#111;">
+        <h2>Biometric Attendance Report</h2>
+        <p>Please find the attendance report attached to this email.</p>
+        <p><strong>This report contains sensitive PII data and has been encrypted during transit.</strong></p>
+      </div>
     `;
 
-    // Send email
+    const emailContent = `
+      <div style="font-family:Arial,sans-serif;color:#111;line-height:1.5;">
+        ${sanitizedNote ? `<p><strong>Note from sender:</strong> ${sanitizedNote}</p>` : ''}
+        ${bodyHtml}
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
+        <p style="font-size:12px;color:#6b7280;margin:0;">Generated on: ${new Date().toLocaleString()}</p>
+      </div>
+    `;
+
     const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      from: emailFrom,
       to: email,
       subject: 'Biometric Attendance Report',
       html: emailContent,
-      attachments: reportData ? [
-        {
-          filename: `report-${new Date().toISOString().split('T')[0]}.xlsx`,
-          content: Buffer.from(reportData, 'base64'),
-        },
-      ] : [],
     };
 
     const info = await transporter.sendMail(mailOptions);

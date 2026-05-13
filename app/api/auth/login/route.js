@@ -1,53 +1,40 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 
-// Simple in-memory rate limiting (in production, use Redis)
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET;
+
+// Simple in-memory rate limiting (for production use a persistent store like Redis)
 const loginAttempts = new Map();
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutes
 
-// Credentials (in production, use a database with bcrypt hashing)
-const VALID_CREDENTIALS = {
-  email: 'admin@example.com',
-  password: 'Admin@123',
-};
+function createAuthToken(email, expiresAt) {
+  const payload = JSON.stringify({ email, exp: expiresAt });
+  const signature = crypto
+    .createHmac('sha256', AUTH_TOKEN_SECRET)
+    .update(payload)
+    .digest('hex');
+  const token = `${payload}.${signature}`;
+  return Buffer.from(token).toString('base64url');
+}
 
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
 
-function validatePassword(password) {
-  const minLength = 8;
-  const hasUppercase = /[A-Z]/.test(password);
-  const hasLowercase = /[a-z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const hasSpecialChar = /[!@#$%^&*]/.test(password);
-
-  const errors = [];
-  if (password.length < minLength) {
-    errors.push(`Password must be at least ${minLength} characters`);
+function ensureAuthEnvironment() {
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    throw new Error('Missing authentication environment variables');
   }
-  if (!hasUppercase) {
-    errors.push('Password must contain at least one uppercase letter');
-  }
-  if (!hasLowercase) {
-    errors.push('Password must contain at least one lowercase letter');
-  }
-  if (!hasNumber) {
-    errors.push('Password must contain at least one number');
-  }
-  if (!hasSpecialChar) {
-    errors.push('Password must contain at least one special character (!@#$%^&*)');
-  }
-
-  return { valid: errors.length === 0, errors };
 }
 
 function checkRateLimit(email) {
   const now = Date.now();
   const attempts = loginAttempts.get(email) || { count: 0, firstAttemptTime: now };
 
-  // Reset if lockout period has expired
   if (now - attempts.firstAttemptTime > LOCKOUT_TIME) {
     loginAttempts.delete(email);
     return { allowed: true, remaining: MAX_ATTEMPTS };
@@ -73,9 +60,17 @@ function recordLoginAttempt(email) {
 
 export async function POST(request) {
   try {
-    const { email, password, rememberMe } = await request.json();
+    const body = await request.json().catch(() => null);
 
-    // Input validation
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    const { email, password, rememberMe = false } = body;
+
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
@@ -83,10 +78,8 @@ export async function POST(request) {
       );
     }
 
-    // Sanitize email
-    const sanitizedEmail = email.trim().toLowerCase();
+    const sanitizedEmail = String(email).trim().toLowerCase();
 
-    // Validate email format
     if (!isValidEmail(sanitizedEmail)) {
       return NextResponse.json(
         { error: 'Invalid email address format' },
@@ -94,7 +87,6 @@ export async function POST(request) {
       );
     }
 
-    // Check rate limiting
     const rateLimit = checkRateLimit(sanitizedEmail);
     if (!rateLimit.allowed) {
       console.warn(`[SECURITY] Rate limit exceeded for email: ${sanitizedEmail}`);
@@ -107,19 +99,19 @@ export async function POST(request) {
       );
     }
 
-    // Validate password format
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.valid) {
+    ensureAuthEnvironment();
+
+    if (!AUTH_TOKEN_SECRET) {
+      console.error('[ERROR] Missing auth token secret');
       return NextResponse.json(
-        { error: 'Invalid password format', details: passwordValidation.errors },
-        { status: 400 }
+        { error: 'Server authentication is not configured' },
+        { status: 500 }
       );
     }
 
-    // Verify credentials
     if (
-      sanitizedEmail !== VALID_CREDENTIALS.email ||
-      password !== VALID_CREDENTIALS.password
+      sanitizedEmail !== ADMIN_EMAIL ||
+      String(password) !== ADMIN_PASSWORD
     ) {
       recordLoginAttempt(sanitizedEmail);
       const rateCheckAfter = checkRateLimit(sanitizedEmail);
@@ -134,16 +126,12 @@ export async function POST(request) {
       );
     }
 
-    // Clear rate limiting on successful login
     loginAttempts.delete(sanitizedEmail);
 
-    // Create session
-    const sessionToken = Buffer.from(`${sanitizedEmail}:${Date.now()}:${Math.random()}`).toString('base64');
-    const sessionExpiry = rememberMe
-      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
-      : new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours
+    const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 8 * 60 * 60;
+    const expiresAt = Date.now() + maxAge * 1000;
+    const authToken = createAuthToken(sanitizedEmail, expiresAt);
 
-    // Log successful login
     console.log(`[SECURITY] Successful login: ${sanitizedEmail} at ${new Date().toISOString()}`);
 
     const response = NextResponse.json(
@@ -153,31 +141,23 @@ export async function POST(request) {
           email: sanitizedEmail,
           role: 'admin',
         },
-        sessionToken,
       },
       { status: 200 }
     );
 
-    // Set secure session cookie
-    response.cookies.set('authToken', sessionToken, {
+    response.cookies.set('authToken', authToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: rememberMe ? 30 * 24 * 60 * 60 : 8 * 60 * 60,
-    });
-
-    response.cookies.set('userEmail', sanitizedEmail, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: rememberMe ? 30 * 24 * 60 * 60 : 8 * 60 * 60,
+      maxAge,
+      path: '/',
     });
 
     return response;
   } catch (error) {
     console.error('[ERROR] Login endpoint error:', error);
     return NextResponse.json(
-      { error: 'An error occurred during login' },
+      { error: 'Failed to process login request' },
       { status: 500 }
     );
   }

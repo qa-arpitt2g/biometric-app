@@ -1,27 +1,20 @@
 import { NextResponse } from 'next/server';
 
-export async function POST(request) {
+export async function POST() {
   try {
-    // Get the session/auth data from request headers if needed for validation
-    const { sessionToken } = await request.json().catch(() => ({}));
-
-    // Clear authentication cookies
     const response = NextResponse.json(
       { message: 'Signed out successfully' },
       { status: 200 }
     );
 
-    // Clear auth-related cookies
     response.cookies.delete('authToken');
-    response.cookies.delete('sessionId');
-    response.cookies.delete('userPreferences');
+    response.cookies.delete('userEmail');
 
-    // Log sign-out event for security audit
     console.log(`[SECURITY] User signed out at ${new Date().toISOString()}`);
 
     return response;
   } catch (error) {
-    console.error('Error during sign-out:', error);
+    console.error('[ERROR] Sign-out failed:', error);
     return NextResponse.json(
       { error: 'Failed to sign out' },
       { status: 500 }

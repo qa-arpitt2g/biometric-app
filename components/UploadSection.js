@@ -90,9 +90,9 @@ export function GuidelinesCard() {
             Multiple punches are paired sequentially to calculate login and break time.
           </li>
         </ul>
-        <button className="mt-lg w-full py-xs border border-secondary text-secondary rounded-lg font-bold text-body-sm hover:bg-secondary/5 transition-all">
+        {/* <button className="mt-lg w-full py-xs border border-secondary text-secondary rounded-lg font-bold text-body-sm hover:bg-secondary/5 transition-all">
           Download Sample Template
-        </button>
+        </button> */}
       </div>
       <div className="relative rounded-xl overflow-hidden h-40 group">
         <Image

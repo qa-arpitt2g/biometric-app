@@ -136,6 +136,64 @@ function getExportFill(columnIndex, rowIndex, row) {
   return { fgColor: { rgb: 'FFFFFF' } };
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getCellStyle(columnKey, row) {
+  if (columnKey === 'totalLoginTime') {
+    const minutes = timeToMinutes(row.totalLoginTime);
+    if (minutes >= 540) {
+      return 'background:#c6efce;color:#006100;';
+    }
+    if (minutes >= 480) {
+      return 'background:#fff2cc;color:#7f6000;';
+    }
+    return 'background:#fce4d6;color:#9c5700;';
+  }
+
+  if (columnKey === 'totalBreakTime') {
+    return timeToMinutes(row.totalBreakTime) > 60
+      ? 'background:#f4cccc;color:#990000;'
+      : 'background:#c6efce;color:#006100;';
+  }
+
+  return '';
+}
+
+function buildReportHtml(rows, fileName) {
+  const header = `<div style="font-family:Arial, sans-serif;color:#111;margin-bottom:1rem;">
+      <h2 style="margin:0 0 0.5rem 0;font-size:22px;">Processed Attendance Report</h2>
+      <p style="margin:0;font-size:14px;color:#555;">${escapeHtml(fileName || 'Processed attendance report')} — ${rows.length} rows</p>
+    </div>`;
+
+  const tableHeader = `<tr>${attendanceColumns.map((column) => `
+        <th style="border:1px solid #d1d5db;padding:10px;background:#f3f4f6;text-align:center;font-weight:700;font-size:13px;">${escapeHtml(column.label)}</th>`).join('')}
+      </tr>`;
+
+  const tableRows = rows.map((row, index) => `
+      <tr>${attendanceColumns.map((column) => {
+        const value = column.key === 'sNo' ? index + 1 : row[column.key] ?? '';
+        const style = getCellStyle(column.key, row);
+        return `<td style="border:1px solid #d1d5db;padding:10px;text-align:center;${style}">${escapeHtml(value)}</td>`;
+      }).join('')}</tr>`).join('');
+
+  return `
+    <div style="font-family:Arial, sans-serif;color:#111;">
+      ${header}
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>${tableHeader}</thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
 export default function ProcessedAttendancePreview({ rows = [], isProcessing = false, fileName, onReset }) {
   const [nameQuery, setNameQuery] = useState('');
   const [codeQuery, setCodeQuery] = useState('');
@@ -144,6 +202,7 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
   const [page, setPage] = useState(1);
   const [scrollTop, setScrollTop] = useState(0);
   const [isEmailOpen, setIsEmailOpen] = useState(false);
+  const [emailReportHtml, setEmailReportHtml] = useState('');
   const [showToast, setShowToast] = useState(false);
 
   const filteredRows = useMemo(() => {
@@ -253,7 +312,10 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
               <span className="material-symbols-outlined text-[20px]">download</span>
               Download Report
             </button>
-            <button className="px-md py-sm bg-secondary text-on-secondary rounded-lg font-bold shadow-md hover:bg-secondary-fixed-dim/90 flex items-center gap-xs" onClick={() => setIsEmailOpen(true)} type="button">
+            <button className="px-md py-sm bg-secondary text-on-secondary rounded-lg font-bold shadow-md hover:bg-secondary-fixed-dim/90 flex items-center gap-xs" onClick={() => {
+              setEmailReportHtml(buildReportHtml(filteredRows, fileName));
+              setIsEmailOpen(true);
+            }} type="button">
               <span className="material-symbols-outlined text-[20px]">mail</span>
               Send Report
             </button>
@@ -412,6 +474,7 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
 
       <EmailReportModal
         isOpen={isEmailOpen}
+        reportHtml={emailReportHtml}
         onClose={() => setIsEmailOpen(false)}
         onSent={() => {
           setShowToast(true);
