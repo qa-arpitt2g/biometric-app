@@ -167,26 +167,25 @@ function getCellStyle(columnKey, row) {
 }
 
 function buildReportHtml(rows, fileName) {
-  const header = `<div style="font-family:Arial, sans-serif;color:#111;margin-bottom:1rem;">
-      <h2 style="margin:0 0 0.5rem 0;font-size:22px;">Processed Attendance Report</h2>
-      <p style="margin:0;font-size:14px;color:#555;">${escapeHtml(fileName || 'Processed attendance report')} — ${rows.length} rows</p>
+  const header = `<div style="font-family:Arial, sans-serif;color:#111;margin-bottom:0.5rem;">
+      <h2 style="margin:0;font-size:18px;font-weight:700;">Processed Attendance Report</h2>
     </div>`;
 
   const tableHeader = `<tr>${attendanceColumns.map((column) => `
-        <th style="border:1px solid #d1d5db;padding:10px;background:#f3f4f6;text-align:center;font-weight:700;font-size:13px;">${escapeHtml(column.label)}</th>`).join('')}
+        <th style="border:1px solid #ccc;padding:6px 8px;background:#f7f7f7;text-align:center;font-weight:700;font-size:12px;">${escapeHtml(column.label)}</th>`).join('')}
       </tr>`;
 
   const tableRows = rows.map((row, index) => `
       <tr>${attendanceColumns.map((column) => {
         const value = column.key === 'sNo' ? index + 1 : row[column.key] ?? '';
         const style = getCellStyle(column.key, row);
-        return `<td style="border:1px solid #d1d5db;padding:10px;text-align:center;${style}">${escapeHtml(value)}</td>`;
+        return `<td style="border:1px solid #ccc;padding:6px 8px;text-align:center;font-size:12px;${style}">${escapeHtml(value)}</td>`;
       }).join('')}</tr>`).join('');
 
   return `
     <div style="font-family:Arial, sans-serif;color:#111;">
       ${header}
-      <table style="width:100%;border-collapse:collapse;">
+      <table style="width:100%;border-collapse:collapse;margin-top:6px;">
         <thead>${tableHeader}</thead>
         <tbody>${tableRows}</tbody>
       </table>
@@ -293,26 +292,26 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
 
   return (
     <>
-      <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-[0px_4px_20px_rgba(26,43,76,0.05)] overflow-hidden fade-in">
-        <div className="px-lg py-md border-b border-outline-variant/30 flex flex-col gap-md xl:flex-row xl:items-center xl:justify-between">
+      <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-[0px_4px_20px_rgba(26,43,76,0.05)] overflow-hidden fade-in w-full">
+        <div className="px-4 py-4 sm:px-lg sm:py-md border-b border-outline-variant/30 flex flex-col gap-md xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h4 className="font-title-lg text-title-lg text-primary">Daily Attendance Processing Report</h4>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 truncate">
               {fileName || 'Processed attendance file'} - {filteredRows.length} visible rows
             </p>
           </div>
-          <div className="flex flex-wrap gap-sm">
+          <div className="flex flex-wrap gap-sm justify-start">
             {onReset ? (
-              <button className="px-md py-sm border border-outline-variant/40 rounded-lg font-bold text-primary hover:bg-surface-container-low flex items-center gap-xs" onClick={onReset} type="button">
+              <button className="w-full sm:w-auto px-md py-sm border border-outline-variant/40 rounded-lg font-bold text-primary hover:bg-surface-container-low flex items-center justify-center gap-xs" onClick={onReset} type="button">
                 <span className="material-symbols-outlined text-[20px]">upload_file</span>
                 Upload New File
               </button>
             ) : null}
-            <button className="px-md py-sm border border-outline-variant/40 rounded-lg font-bold text-primary hover:bg-surface-container-low flex items-center gap-xs" onClick={downloadReport} type="button">
+            <button className="w-full sm:w-auto px-md py-sm border border-outline-variant/40 rounded-lg font-bold text-primary hover:bg-surface-container-low flex items-center justify-center gap-xs" onClick={downloadReport} type="button">
               <span className="material-symbols-outlined text-[20px]">download</span>
               Download Report
             </button>
-            <button className="px-md py-sm bg-secondary text-on-secondary rounded-lg font-bold shadow-md hover:bg-secondary-fixed-dim/90 flex items-center gap-xs" onClick={() => {
+            <button className="w-full sm:w-auto px-md py-sm bg-secondary text-on-secondary rounded-lg font-bold shadow-md hover:bg-secondary-fixed-dim/90 flex items-center justify-center gap-xs" onClick={() => {
               setEmailReportHtml(buildReportHtml(filteredRows, fileName));
               setIsEmailOpen(true);
             }} type="button">
@@ -322,7 +321,7 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
           </div>
         </div>
 
-        <div className="px-lg py-md bg-surface-container-low/40 border-b border-outline-variant/30 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-sm">
+        <div className="px-4 py-4 sm:px-lg sm:py-md bg-surface-container-low/40 border-b border-outline-variant/30 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-sm">
           <label className="relative">
             <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">person_search</span>
             <input
@@ -381,7 +380,7 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
         <div className="overflow-x-auto bg-white">
           <div
             key={`${currentPage}-${nameQuery}-${codeQuery}-${loginFilter}-${breakFilter}`}
-            className="max-h-[610px] overflow-y-auto"
+            className="max-h-[610px] overflow-y-auto min-w-full"
             onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
             style={{ minWidth: `${totalWidth}px` }}
           >
@@ -440,11 +439,11 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
           </div>
         </div>
 
-        <div className="px-lg py-sm bg-surface-container-low border-t border-outline-variant/30 flex flex-col sm:flex-row gap-sm sm:items-center sm:justify-between">
+        <div className="px-4 py-3 sm:px-lg sm:py-sm bg-surface-container-low border-t border-outline-variant/30 flex flex-col sm:flex-row gap-sm sm:items-center sm:justify-between">
           <p className="font-body-sm text-body-sm text-on-surface-variant">
             Showing {filteredRows.length ? (currentPage - 1) * pageSize + 1 : 0}-{Math.min(currentPage * pageSize, filteredRows.length)} of {filteredRows.length} rows
           </p>
-          <div className="flex items-center gap-xs">
+          <div className="flex items-center gap-xs flex-wrap">
             <button
               className="p-xs border border-outline-variant/30 rounded hover:bg-surface-container-highest transition-colors disabled:opacity-30"
               disabled={currentPage === 1}

@@ -7,7 +7,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-sidebar-width bg-primary shadow-[0px_4px_20px_rgba(26,43,76,0.05)] flex flex-col py-md px-sm z-50">
+    <aside className="relative w-full lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-sidebar-width bg-primary shadow-[0px_4px_20px_rgba(26,43,76,0.05)] flex flex-col py-md px-sm z-50">
       <div className="mb-xl px-xs">
         <Brand light={true} className="mb-2" />
         <p className="font-body-sm text-body-sm text-on-primary/70">Admin</p>

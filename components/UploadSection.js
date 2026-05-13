@@ -29,12 +29,12 @@ export function UploadCard({
         </span>
       </label>
 
-      <div className="mt-lg p-md bg-surface-container-high/20 rounded-lg border border-outline-variant/20 flex items-center gap-md">
+      <div className="mt-lg p-md bg-surface-container-high/20 rounded-lg border border-outline-variant/20 flex flex-col sm:flex-row items-start sm:items-center gap-md">
         <div className="p-xs bg-secondary-container/30 rounded">
           <span className="material-symbols-outlined text-secondary">description</span>
         </div>
-        <div className="flex-1">
-          <div className="flex justify-between items-center mb-xs">
+        <div className="flex-1 w-full">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-xs gap-2">
             <span className="font-body-md text-body-md font-semibold text-primary truncate">{fileName}</span>
             <span className="font-label-caps text-label-caps text-secondary">{uploadProgress}%</span>
           </div>
@@ -43,7 +43,7 @@ export function UploadCard({
           </div>
         </div>
         <button
-          className="p-xs hover:bg-error-container/20 text-error rounded-full transition-colors disabled:opacity-30"
+          className="p-xs hover:bg-error-container/20 text-error rounded-full transition-colors disabled:opacity-30 self-end sm:self-auto"
           disabled={!selectedFile || isProcessing}
           onClick={onClearFile}
           type="button"
@@ -53,9 +53,9 @@ export function UploadCard({
         </button>
       </div>
 
-      <div className="mt-lg flex justify-end">
+      <div className="mt-lg flex flex-col sm:flex-row justify-end gap-sm">
         <button
-          className="px-xl py-sm bg-secondary text-on-secondary rounded-lg font-bold shadow-md hover:bg-secondary-fixed-dim/90 transition-all active:scale-[0.98] flex items-center gap-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto px-xl py-sm bg-secondary text-on-secondary rounded-lg font-bold shadow-md hover:bg-secondary-fixed-dim/90 transition-all active:scale-[0.98] flex items-center justify-center gap-sm disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={!selectedFile || isProcessing}
           onClick={onProcess}
           type="button"
@@ -94,7 +94,7 @@ export function GuidelinesCard() {
           Download Sample Template
         </button> */}
       </div>
-      <div className="relative rounded-xl overflow-hidden h-40 group">
+      <div className="relative rounded-xl overflow-hidden h-40 group hidden sm:block">
         <Image
           alt="Data Analytics"
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcS7NczTqNgiVBTIc4l9PQsFHuEuRYGpQVuPp6gESC95vhreXn5cTCsjG4PBYE5a9k81YwHRhR-kUXOf1qbyYIlVD5Aloh3FN8zrYpZ83AfJlpz9iXLkXnw_cqaZE3hWVdE3GwWvMh8WTDwIh2O2T6OUj_i1OCLFJi3ucG2BuikN98zpcQKVBqqeyDQAnhQA4XxZxtqRD2ftcEO1_KsFz2XYaj8a1ED9Pg9p4vHgzPrZSOSgo5TFHnZgFwq4j7Ti-E5tvuOpIw7xU"
