@@ -105,13 +105,26 @@ export function GuidelinesCard() {
       <div className="relative rounded-xl overflow-hidden h-40 group hidden sm:block">
         <Image
           alt="Data Analytics"
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcS7NczTqNgiVBTIc4l9PQsFHuEuRYGpQVuPp6gESC95vhreXn5cTCsjG4PBYE5a9k81YwHRhR-kUXOf1qbyYIlVD5Aloh3FN8zrYpZ83AfJlpz9iXLkXnw_cqaZE3hWVdE3GwWvMh8WTDwIh2O2T6OUj_i1OCLFJi3ucG2BuikN98zpcQKVBqqeyDQAnhQA4XxZxtqRD2ftcEO1_KsFz2XYaj8a1ED9Pg9p4vHgzPrZSOSgo5TFHnZgFwq4j7Ti-E5tvuOpIw7xU"
+          src="/assets/data-analytics.png"
           fill
           sizes="(min-width: 1024px) 25vw, 100vw"
-          className="object-cover"
+          className="object-cover group-hover:scale-110 transition-transform duration-500"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent flex items-end p-md">
           <p className="text-on-primary font-body-sm">Automated reconciliation detects 99.8% of anomalies.</p>
+        </div>
+      </div>
+
+      <div className="relative rounded-xl overflow-hidden h-40 group hidden sm:block">
+        <Image
+          alt="Attendance Analytics"
+          src="/assets/attendance-analytics.png"
+          fill
+          sizes="(min-width: 1024px) 25vw, 100vw"
+          className="object-cover group-hover:scale-110 transition-transform duration-500"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-secondary/90 to-transparent flex items-end p-md">
+          <p className="text-on-primary font-body-sm text-on-secondary">Advanced HR analytics provide real-time attendance insights.</p>
         </div>
       </div>
     </div>
