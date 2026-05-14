@@ -48,7 +48,7 @@ export default function NarrativeSection() {
             <Image
               alt="Workforce Illustration"
               className="w-full h-auto drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
-              src="/assets/login-illustration.png"
+              src="/assets/login-image.webp"
               width={600}
               height={500}
               priority

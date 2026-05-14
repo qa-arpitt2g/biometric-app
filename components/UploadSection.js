@@ -4,6 +4,7 @@ export function UploadCard({
   selectedFile,
   uploadProgress = 0,
   isProcessing = false,
+  error = '',
   onFileSelect,
   onClearFile,
   onProcess,
@@ -12,6 +13,13 @@ export function UploadCard({
 
   return (
     <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-lg shadow-[0px_4px_20px_rgba(26,43,76,0.05)]">
+      {error && (
+        <div className="mb-md bg-error-container/20 text-error border border-error/20 rounded-lg p-md flex items-center gap-sm animate-shake">
+          <span className="material-symbols-outlined text-[20px]">error</span>
+          <p className="font-body-sm text-body-sm font-medium">{error}</p>
+        </div>
+      )}
+
       <label className="border-2 border-dashed border-secondary/30 bg-surface-container-low/30 rounded-xl p-xl flex flex-col items-center justify-center text-center group hover:border-secondary transition-all cursor-pointer">
         <input
           type="file"

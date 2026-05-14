@@ -142,7 +142,7 @@ export default function LoginForm() {
         <div className="flex flex-col gap-2">
           <div className="flex justify-between items-center">
             <label className="text-xs font-bold text-[#44474e] tracking-widest uppercase" htmlFor="password">Password</label>
-            <a className="text-sm text-[#006a6a] font-semibold hover:text-[#004f50] transition-colors" href="#">Forgot Password?</a>
+            {/* <a className="text-sm text-[#006a6a] font-semibold hover:text-[#004f50] transition-colors" href="#">Forgot Password?</a> */}
           </div>
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">

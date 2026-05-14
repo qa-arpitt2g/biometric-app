@@ -719,6 +719,17 @@ export default function UploadWorkspace() {
       return;
     }
 
+    const allowedExtensions = ['csv', 'xlsx', 'xls'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+
+    if (!allowedExtensions.includes(fileExtension)) {
+      setError('Invalid file type. Please upload a .csv, .xlsx, or .xls file.');
+      setSelectedFile(null);
+      setUploadProgress(0);
+      setRows([]);
+      return;
+    }
+
     setSelectedFile(file);
     setUploadProgress(100);
     setRows([]);
@@ -751,6 +762,7 @@ export default function UploadWorkspace() {
           selectedFile={selectedFile}
           uploadProgress={uploadProgress}
           isProcessing={isProcessing}
+          error={error}
           onFileSelect={handleFileSelect}
           onClearFile={resetUpload}
           onProcess={() => processFile(selectedFile)}
@@ -758,11 +770,7 @@ export default function UploadWorkspace() {
         <GuidelinesCard />
       </div>
 
-      {error ? (
-        <div className="mb-lg bg-error-container text-on-error-container border border-error/20 rounded-lg p-md font-body-sm text-body-sm">
-          {error}
-        </div>
-      ) : null}
+
 
       <ProcessedAttendancePreview rows={[]} isProcessing={false} />
     </>
