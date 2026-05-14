@@ -64,7 +64,7 @@ export async function POST(request) {
     `;
 
     const mailOptions = {
-      from: emailFrom,
+      from: `"Biometric Attendance" <${emailFrom}>`,
       to: emails.map((e) => String(e).trim()).join(', '),
       subject: 'Biometric Attendance Report',
       html: emailContent,
