@@ -49,15 +49,15 @@ function loginCellClass(value) {
     return 'bg-white';
   }
 
-  if (minutes >= 540) {
+  if (minutes >= 540) { // 9 hours
     return 'bg-[#c6efce] text-[#006100]';
   }
 
-  if (minutes >= 480) {
+  if (minutes >= 300) { // 5 hours
     return 'bg-[#fff2cc] text-[#7f6000]';
   }
 
-  return 'bg-[#fce4d6] text-[#9c5700]';
+  return 'bg-[#f4cccc] text-[#990000]';
 }
 
 function breakCellClass(value) {
@@ -122,11 +122,11 @@ function getExportFill(columnIndex, rowIndex, row) {
       return { fgColor: { rgb: 'C6EFCE' } };
     }
 
-    if (minutes >= 480) {
+    if (minutes >= 300) {
       return { fgColor: { rgb: 'FFF2CC' } };
     }
 
-    return { fgColor: { rgb: 'FCE4D6' } };
+    return { fgColor: { rgb: 'F4CCCC' } };
   }
 
   if (columnKey === 'totalBreakTime') {
@@ -151,10 +151,10 @@ function getCellStyle(columnKey, row) {
     if (minutes >= 540) {
       return 'background:#c6efce;color:#006100;';
     }
-    if (minutes >= 480) {
+    if (minutes >= 300) {
       return 'background:#fff2cc;color:#7f6000;';
     }
-    return 'background:#fce4d6;color:#9c5700;';
+    return 'background:#f4cccc;color:#990000;';
   }
 
   if (columnKey === 'totalBreakTime') {
@@ -206,14 +206,19 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      // Show only those who are present and have punch records
+      const totalInCount = Number(row.totalIn || 0);
+      const isPresent = totalInCount > 0;
+      if (!isPresent) return false;
+
       const loginMinutes = timeToMinutes(row.totalLoginTime);
       const breakMinutes = timeToMinutes(row.totalBreakTime);
       const matchesName = String(row.employeeName || '').toLowerCase().includes(nameQuery.toLowerCase());
       const matchesCode = String(row.employeeCode || '').toLowerCase().includes(codeQuery.toLowerCase());
       const matchesLogin = loginFilter === 'all'
         || (loginFilter === 'good' && loginMinutes >= 540)
-        || (loginFilter === 'warning' && loginMinutes >= 480 && loginMinutes < 540)
-        || (loginFilter === 'low' && loginMinutes < 480);
+        || (loginFilter === 'warning' && loginMinutes >= 300 && loginMinutes < 540)
+        || (loginFilter === 'low' && loginMinutes < 300);
       const matchesBreak = breakFilter === 'all'
         || (breakFilter === 'excessive' && breakMinutes > 60)
         || (breakFilter === 'acceptable' && breakMinutes <= 60);
@@ -358,9 +363,9 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
             }}
           >
             <option value="all">All login hours</option>
-            <option value="good">Good login hours</option>
-            <option value="warning">8-9 login hours</option>
-            <option value="low">Under 8 login hours</option>
+            <option value="good">9+ hours (Green)</option>
+            <option value="warning">5-9 hours (Yellow)</option>
+            <option value="low">Under 5 hours (Red)</option>
           </select>
           <select
             className="w-full rounded-lg border border-outline-variant/40 bg-white px-sm py-sm font-body-sm text-body-sm outline-none focus:border-secondary"
