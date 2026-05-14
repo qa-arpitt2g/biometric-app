@@ -757,7 +757,7 @@ export default function UploadWorkspace() {
 
   return (
     <>
-      <div className="grid grid-cols-12 gap-gutter mb-xl fade-in">
+      <div className="grid grid-cols-12 gap-5 md:gap-6 mb-8 fade-in">
         <UploadCard
           selectedFile={selectedFile}
           uploadProgress={uploadProgress}

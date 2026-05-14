@@ -50,18 +50,14 @@ export default function TopNavbar() {
   };
 
   return (
-    <header className="sticky top-0 w-full z-40 bg-surface/70 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm flex justify-between items-center h-xl px-lg">
-      <div className="flex items-center gap-lg">
+    <header className="sticky top-0 w-full z-40 bg-surface/70 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm flex flex-col sm:flex-row sm:justify-between items-center gap-3 px-4 py-3 sm:px-6">
+      <div className="flex items-center gap-3 w-full justify-between">
         <h2 className="font-headline-sm text-headline-sm font-black text-primary">Attendance Portal</h2>
       </div>
-      <div className="flex items-center gap-md">
-        <button className="p-xs hover:bg-surface-container-highest rounded-full transition-all">
-          <span className="material-symbols-outlined text-primary">apps</span>
-        </button>
-        
+      <div className="flex items-center gap-3 w-full justify-between sm:justify-end">
         {/* Profile Dropdown Container */}
         <div className="relative">
-          <button 
+          <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="h-8 w-8 rounded-full overflow-hidden border border-outline-variant/50 relative hover:ring-2 hover:ring-secondary/20 transition-all bg-surface-container-highest flex items-center justify-center"
           >
@@ -72,16 +68,16 @@ export default function TopNavbar() {
           {isDropdownOpen && (
             <>
               {/* Overlay to close dropdown on click outside */}
-              <div 
-                className="fixed inset-0 z-0" 
+              <div
+                className="fixed inset-0 z-0"
                 onClick={() => setIsDropdownOpen(false)}
               ></div>
-              
+
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-outline-variant/30 py-2 z-10 animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="px-4 py-2 border-b border-outline-variant/20 mb-1">
                   <p className="text-xs font-bold text-on-surface-variant tracking-wider uppercase">Administrator</p>
                 </div>
-                <button 
+                <button
                   onClick={handleSignOut}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-error hover:bg-error-container/10 transition-colors"
                 >

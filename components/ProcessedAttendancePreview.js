@@ -177,10 +177,10 @@ function buildReportHtml(rows, fileName) {
 
   const tableRows = rows.map((row, index) => `
       <tr>${attendanceColumns.map((column) => {
-        const value = column.key === 'sNo' ? index + 1 : row[column.key] ?? '';
-        const style = getCellStyle(column.key, row);
-        return `<td style="border:1px solid #ccc;padding:6px 8px;text-align:center;font-size:12px;${style}">${escapeHtml(value)}</td>`;
-      }).join('')}</tr>`).join('');
+    const value = column.key === 'sNo' ? index + 1 : row[column.key] ?? '';
+    const style = getCellStyle(column.key, row);
+    return `<td style="border:1px solid #ccc;padding:6px 8px;text-align:center;font-size:12px;${style}">${escapeHtml(value)}</td>`;
+  }).join('')}</tr>`).join('');
 
   return `
     <div style="font-family:Arial, sans-serif;color:#111;">
@@ -293,14 +293,14 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
   return (
     <>
       <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-[0px_4px_20px_rgba(26,43,76,0.05)] overflow-hidden fade-in w-full">
-        <div className="px-4 py-4 sm:px-lg sm:py-md border-b border-outline-variant/30 flex flex-col gap-md xl:flex-row xl:items-center xl:justify-between">
+        <div className="px-4 py-4 sm:px-6 sm:py-5 border-b border-outline-variant/30 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h4 className="font-title-lg text-title-lg text-primary">Daily Attendance Processing Report</h4>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 truncate">
               {fileName || 'Processed attendance file'} - {filteredRows.length} visible rows
             </p>
           </div>
-          <div className="flex flex-wrap gap-sm justify-start">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-start w-full sm:w-auto">
             {onReset ? (
               <button className="w-full sm:w-auto px-md py-sm border border-outline-variant/40 rounded-lg font-bold text-primary hover:bg-surface-container-low flex items-center justify-center gap-xs" onClick={onReset} type="button">
                 <span className="material-symbols-outlined text-[20px]">upload_file</span>
@@ -321,7 +321,7 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
           </div>
         </div>
 
-        <div className="px-4 py-4 sm:px-lg sm:py-md bg-surface-container-low/40 border-b border-outline-variant/30 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-sm">
+        <div className="px-4 py-4 sm:px-6 sm:py-5 bg-surface-container-low/40 border-b border-outline-variant/30 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           <label className="relative">
             <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">person_search</span>
             <input
@@ -382,9 +382,8 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
             key={`${currentPage}-${nameQuery}-${codeQuery}-${loginFilter}-${breakFilter}`}
             className="max-h-[610px] overflow-y-auto min-w-full"
             onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
-            style={{ minWidth: `${totalWidth}px` }}
           >
-            <table className="w-full border-collapse table-fixed text-[12px] leading-tight font-[Arial,Helvetica,sans-serif]">
+            <table className="w-full border-collapse table-auto text-[12px] leading-tight font-[Arial,Helvetica,sans-serif]">
               <colgroup>
                 {attendanceColumns.map((column) => (
                   <col key={column.key} style={{ width: column.width }} />
@@ -439,7 +438,7 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
           </div>
         </div>
 
-        <div className="px-4 py-3 sm:px-lg sm:py-sm bg-surface-container-low border-t border-outline-variant/30 flex flex-col sm:flex-row gap-sm sm:items-center sm:justify-between">
+        <div className="px-4 py-3 sm:px-6 sm:py-4 bg-surface-container-low border-t border-outline-variant/30 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-body-sm text-body-sm text-on-surface-variant">
             Showing {filteredRows.length ? (currentPage - 1) * pageSize + 1 : 0}-{Math.min(currentPage * pageSize, filteredRows.length)} of {filteredRows.length} rows
           </p>

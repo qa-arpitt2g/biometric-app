@@ -10,7 +10,7 @@ export default function Home() {
       <div className="hidden lg:block lg:w-[60%] h-full">
         <NarrativeSection />
       </div>
-      
+
       {/* Right Section: Login Interface (40% Width) */}
       <div className="w-full lg:w-[40%] h-screen flex items-center justify-center p-8 lg:p-12 overflow-y-auto bg-white">
         <div className="w-full max-w-[400px] flex flex-col h-full justify-center">
@@ -18,12 +18,12 @@ export default function Home() {
           <div className="lg:hidden flex justify-center mb-12">
             <Brand light={false} />
           </div>
-          
+
           {/* Login Card */}
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <LoginForm />
           </div>
-          
+
           {/* Footer Links */}
           <div className="mt-12 pt-8">
             <Footer />

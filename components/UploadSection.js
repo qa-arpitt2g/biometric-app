@@ -12,37 +12,37 @@ export function UploadCard({
   const fileName = selectedFile?.name || 'No file selected';
 
   return (
-    <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-lg shadow-[0px_4px_20px_rgba(26,43,76,0.05)]">
+    <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-5 sm:p-6 shadow-[0px_4px_20px_rgba(26,43,76,0.05)]">
       {error && (
-        <div className="mb-md bg-error-container/20 text-error border border-error/20 rounded-lg p-md flex items-center gap-sm animate-shake">
+        <div className="mb-4 bg-error-container/20 text-error border border-error/20 rounded-lg p-4 flex items-center gap-3 animate-shake">
           <span className="material-symbols-outlined text-[20px]">error</span>
           <p className="font-body-sm text-body-sm font-medium">{error}</p>
         </div>
       )}
 
-      <label className="border-2 border-dashed border-secondary/30 bg-surface-container-low/30 rounded-xl p-xl flex flex-col items-center justify-center text-center group hover:border-secondary transition-all cursor-pointer">
+      <label className="border-2 border-dashed border-secondary/30 bg-surface-container-low/30 rounded-xl p-6 sm:p-8 flex flex-col items-center justify-center text-center group hover:border-secondary transition-all cursor-pointer">
         <input
           type="file"
           accept=".csv,.xlsx,.xls"
           className="sr-only"
           onChange={(event) => onFileSelect?.(event.target.files?.[0])}
         />
-        <div className="w-16 h-16 bg-secondary-container/50 rounded-full flex items-center justify-center mb-md group-hover:scale-110 transition-transform">
+        <div className="w-14 h-14 bg-secondary-container/50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
           <span className="material-symbols-outlined text-secondary text-4xl">upload_file</span>
         </div>
-        <h4 className="font-title-lg text-title-lg text-primary mb-xs">Drag & drop your files here</h4>
-        <p className="font-body-sm text-body-sm text-on-surface-variant mb-md">Maximum file size: 25MB. Supported formats: .csv, .xlsx</p>
-        <span className="px-lg py-sm bg-primary text-on-primary rounded-lg font-bold hover:shadow-lg transition-all active:scale-[0.98]">
+        <h4 className="font-title-lg text-title-lg text-primary mb-2">Drag & drop your files here</h4>
+        <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">Maximum file size: 25MB. Supported formats: .csv, .xlsx</p>
+        <span className="inline-flex w-full sm:w-auto min-h-[44px] px-5 py-3 bg-primary text-on-primary rounded-lg font-bold hover:shadow-lg transition-all active:scale-[0.98]">
           Browse Files
         </span>
       </label>
 
-      <div className="mt-lg p-md bg-surface-container-high/20 rounded-lg border border-outline-variant/20 flex flex-col sm:flex-row items-start sm:items-center gap-md">
+      <div className="mt-6 p-4 sm:p-5 bg-surface-container-high/20 rounded-lg border border-outline-variant/20 flex flex-col gap-4">
         <div className="p-xs bg-secondary-container/30 rounded">
           <span className="material-symbols-outlined text-secondary">description</span>
         </div>
         <div className="flex-1 w-full">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-xs gap-2">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
             <span className="font-body-md text-body-md font-semibold text-primary truncate">{fileName}</span>
             <span className="font-label-caps text-label-caps text-secondary">{uploadProgress}%</span>
           </div>
@@ -51,7 +51,7 @@ export function UploadCard({
           </div>
         </div>
         <button
-          className="p-xs hover:bg-error-container/20 text-error rounded-full transition-colors disabled:opacity-30 self-end sm:self-auto"
+          className="p-2 hover:bg-error-container/20 text-error rounded-full transition-colors disabled:opacity-30 self-end sm:self-auto"
           disabled={!selectedFile || isProcessing}
           onClick={onClearFile}
           type="button"
@@ -61,9 +61,9 @@ export function UploadCard({
         </button>
       </div>
 
-      <div className="mt-lg flex flex-col sm:flex-row justify-end gap-sm">
+      <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
         <button
-          className="w-full sm:w-auto px-xl py-sm bg-secondary text-on-secondary rounded-lg font-bold shadow-md hover:bg-secondary-fixed-dim/90 transition-all active:scale-[0.98] flex items-center justify-center gap-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto px-5 py-3 bg-secondary text-on-secondary rounded-lg font-bold shadow-md hover:bg-secondary-fixed-dim/90 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={!selectedFile || isProcessing}
           onClick={onProcess}
           type="button"
