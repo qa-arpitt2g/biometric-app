@@ -366,15 +366,22 @@ function buildAttendanceReportFromPunchRecordsExport(sheetRows) {
 
 function summarizeAttendanceGroup(group, groupIndex) {
   const { employeeCode, employeeName, dateKey, punches: rawPunches } = group;
-  const punches = [...rawPunches].sort((first, second) => {
-    const delta = first.timestamp - second.timestamp;
+  const punches = [...rawPunches].sort((first, second) => (first.sourceOrder ?? 0) - (second.sourceOrder ?? 0));
 
-    if (delta !== 0) {
-      return delta;
+  let dayOffset = 0;
+  let prevTime = -1;
+  punches.forEach((punch) => {
+    const currentMinutes = punch.timestamp.getHours() * 60 + punch.timestamp.getMinutes() + punch.timestamp.getSeconds() / 60;
+    if (prevTime !== -1 && currentMinutes < prevTime) {
+      dayOffset += 1;
     }
-
-    return (first.sourceOrder ?? 0) - (second.sourceOrder ?? 0);
+    if (dayOffset > 0) {
+      punch.timestamp = new Date(punch.timestamp.getTime() + dayOffset * 86400000);
+    }
+    prevTime = currentMinutes;
   });
+
+  punches.sort((first, second) => first.timestamp - second.timestamp);
 
   if (!punches.length) {
     return {
