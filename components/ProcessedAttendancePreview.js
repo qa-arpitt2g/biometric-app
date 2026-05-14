@@ -298,29 +298,29 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
   return (
     <>
       <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-[0px_4px_20px_rgba(26,43,76,0.05)] overflow-hidden fade-in w-full">
-        <div className="px-4 py-4 sm:px-6 sm:py-5 border-b border-outline-variant/30 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="px-4 py-3 sm:px-5 sm:py-4 border-b border-outline-variant/30 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h4 className="font-title-lg text-title-lg text-primary">Daily Attendance Processing Report</h4>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 truncate">
-              {fileName || 'Processed attendance file'} - {filteredRows.length} visible rows
+              {fileName || 'Processed attendance file'}
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-start w-full sm:w-auto">
+          <div className="flex flex-row flex-wrap items-center gap-2 justify-end w-full sm:w-auto">
             {onReset ? (
-              <button className="w-full sm:w-auto px-md py-sm border border-outline-variant/40 rounded-lg font-bold text-primary hover:bg-surface-container-low flex items-center justify-center gap-xs" onClick={onReset} type="button">
-                <span className="material-symbols-outlined text-[20px]">upload_file</span>
+              <button className="h-10 min-w-[130px] px-3 py-2 border border-outline-variant/40 bg-white text-primary text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-surface-container-low hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30" onClick={onReset} type="button">
+                <span className="material-symbols-outlined text-[18px]">upload_file</span>
                 Upload New File
               </button>
             ) : null}
-            <button className="w-full sm:w-auto px-md py-sm border border-outline-variant/40 rounded-lg font-bold text-primary hover:bg-surface-container-low flex items-center justify-center gap-xs" onClick={downloadReport} type="button">
-              <span className="material-symbols-outlined text-[20px]">download</span>
+            <button className="h-10 min-w-[130px] px-3 py-2 border border-outline-variant/40 bg-white text-primary text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-surface-container-low hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30" onClick={downloadReport} type="button">
+              <span className="material-symbols-outlined text-[18px]">download</span>
               Download Report
             </button>
-            <button className="w-full sm:w-auto px-md py-sm bg-secondary text-on-secondary rounded-lg font-bold shadow-md hover:bg-secondary-fixed-dim/90 flex items-center justify-center gap-xs" onClick={() => {
+            <button className="h-10 min-w-[130px] px-3 py-2 bg-secondary text-on-secondary text-sm font-medium rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-secondary-fixed-dim/85 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40" onClick={() => {
               setEmailReportHtml(buildReportHtml(filteredRows, fileName));
               setIsEmailOpen(true);
             }} type="button">
-              <span className="material-symbols-outlined text-[20px]">mail</span>
+              <span className="material-symbols-outlined text-[18px]">mail</span>
               Send Report
             </button>
           </div>
