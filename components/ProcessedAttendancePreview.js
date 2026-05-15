@@ -284,7 +284,7 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
     }
 
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance Report');
-    XLSX.writeFile(workbook, 'processed-attendance-report.xlsx');
+    XLSX.writeFile(workbook, 'attendance-report.xlsx');
   }
 
   if (isProcessing) {

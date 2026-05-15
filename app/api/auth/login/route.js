@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import sessionStore from '@/lib/sessionStore';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL?.trim().toLowerCase();
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -10,8 +11,8 @@ const loginAttempts = new Map();
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutes
 
-function createAuthToken(email, expiresAt) {
-  const payload = JSON.stringify({ email, exp: expiresAt });
+function createAuthToken(email, sessionId, expiresAt) {
+  const payload = JSON.stringify({ email, sid: sessionId, exp: expiresAt });
   const signature = crypto
     .createHmac('sha256', AUTH_TOKEN_SECRET)
     .update(payload)
@@ -128,11 +129,16 @@ export async function POST(request) {
 
     loginAttempts.delete(sanitizedEmail);
 
+    // Generate a unique session ID for this login
+    // This will invalidate any previous sessions for the same user
+    const sessionId = crypto.randomUUID();
+    sessionStore.setActiveSession(sanitizedEmail, sessionId);
+
     const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 8 * 60 * 60;
     const expiresAt = Date.now() + maxAge * 1000;
-    const authToken = createAuthToken(sanitizedEmail, expiresAt);
+    const authToken = createAuthToken(sanitizedEmail, sessionId, expiresAt);
 
-    console.log(`[SECURITY] Successful login: ${sanitizedEmail} at ${new Date().toISOString()}`);
+    console.log(`[SECURITY] Successful login: ${sanitizedEmail} (SID: ${sessionId}) at ${new Date().toISOString()}`);
 
     const response = NextResponse.json(
       {
