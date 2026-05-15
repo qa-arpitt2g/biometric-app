@@ -197,9 +197,13 @@ function formatReportDate(date) {
   }).format(resolvedDate);
 }
 
-function buildReportHtml(rows, fileName) {
+function buildReportTitle(fileName) {
   const reportDate = formatReportDate(parseDateFromFileName(fileName));
-  const reportHeading = `Biometric Attendance Report – ${reportDate}`;
+  return `Biometric Attendance Report – ${reportDate}`;
+}
+
+function buildReportHtml(rows, fileName) {
+  const reportHeading = buildReportTitle(fileName);
   const header = `
     <div style="font-family:Arial, sans-serif;color:#111;">
       <div style="text-align:center;margin-bottom:20px;">
@@ -207,9 +211,6 @@ function buildReportHtml(rows, fileName) {
       </div>
       <p style="margin:0 0 16px 0;">Hello,</p>
       <p style="margin:0 0 20px 0;">Please find the processed attendance report generated from the uploaded biometric attendance data.</p>
-      <div style="text-align:center;margin-top:20px;">
-        <h2 style="margin:0;font-size:20px;font-weight:700;text-decoration:underline;">Attendance Report</h2>
-      </div>
     </div>`;
 
   const tableHeader = `<tr>${attendanceColumns.map((column) => `
@@ -243,6 +244,7 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
   const [scrollTop, setScrollTop] = useState(0);
   const [isEmailOpen, setIsEmailOpen] = useState(false);
   const [emailReportHtml, setEmailReportHtml] = useState('');
+  const [emailReportTitle, setEmailReportTitle] = useState('Biometric Attendance Report');
   const [showToast, setShowToast] = useState(false);
 
   const filteredRows = useMemo(() => {
@@ -358,6 +360,8 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
               Download Report
             </button>
             <button className="h-10 min-w-[130px] px-3 py-2 bg-secondary text-on-secondary text-sm font-medium rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-secondary-fixed-dim/85 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40" onClick={() => {
+              const title = buildReportTitle(fileName);
+              setEmailReportTitle(title);
               setEmailReportHtml(buildReportHtml(filteredRows, fileName));
               setIsEmailOpen(true);
             }} type="button">
@@ -518,6 +522,7 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
 
       <EmailReportModal
         isOpen={isEmailOpen}
+        reportTitle={emailReportTitle}
         reportHtml={emailReportHtml}
         onClose={() => setIsEmailOpen(false)}
         onSent={() => {

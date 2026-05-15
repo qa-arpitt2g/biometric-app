@@ -13,7 +13,7 @@ function parseEmails(value) {
     .filter((email) => email.length > 0);
 }
 
-async function sendReportEmail({ emails, note, reportHtml }) {
+async function sendReportEmail({ emails, note, reportHtml, reportTitle }) {
   const response = await fetch('/api/send-email', {
     method: 'POST',
     headers: {
@@ -23,6 +23,7 @@ async function sendReportEmail({ emails, note, reportHtml }) {
       emails,
       note,
       reportHtml,
+      reportTitle,
     }),
   });
 
@@ -34,7 +35,7 @@ async function sendReportEmail({ emails, note, reportHtml }) {
   return response.json();
 }
 
-export default function EmailReportModal({ isOpen, onClose, onSent, reportHtml }) {
+export default function EmailReportModal({ isOpen, onClose, onSent, reportHtml, reportTitle }) {
   const [email, setEmail] = useState('');
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
@@ -93,7 +94,7 @@ export default function EmailReportModal({ isOpen, onClose, onSent, reportHtml }
     setError('');
     setIsSending(true);
     try {
-      await sendReportEmail({ emails, note, reportHtml });
+      await sendReportEmail({ emails, note, reportHtml, reportTitle });
       handleClose();
       onSent?.();
     } catch (err) {

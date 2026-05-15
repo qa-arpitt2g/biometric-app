@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const { emails, note, reportHtml } = await request.json();
+    const { emails, note, reportHtml, reportTitle } = await request.json();
 
     if (!Array.isArray(emails) || emails.length === 0) {
       return NextResponse.json(
@@ -66,7 +66,7 @@ export async function POST(request) {
     const mailOptions = {
       from: `"Biometric Attendance" <${emailFrom}>`,
       to: emails.map((e) => String(e).trim()).join(', '),
-      subject: 'Biometric Attendance Report',
+      subject: reportTitle || 'Biometric Attendance Report',
       html: emailContent,
     };
 
