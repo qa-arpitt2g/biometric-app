@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Image from 'next/image';
 
 export function UploadCard({
@@ -9,7 +10,31 @@ export function UploadCard({
   onClearFile,
   onProcess,
 }) {
+  const [isDragActive, setIsDragActive] = useState(false);
   const fileName = selectedFile?.name || 'No file selected';
+
+  function handleDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragActive(true);
+  }
+
+  function handleDragLeave(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragActive(false);
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragActive(false);
+
+    const droppedFile = event.dataTransfer?.files?.[0];
+    if (droppedFile) {
+      onFileSelect?.(droppedFile);
+    }
+  }
 
   return (
     <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-5 sm:p-6 shadow-[0px_4px_20px_rgba(26,43,76,0.05)]">
@@ -20,7 +45,13 @@ export function UploadCard({
         </div>
       )}
 
-      <label className="border-2 border-dashed border-secondary/30 bg-surface-container-low/30 rounded-xl p-6 sm:p-8 flex flex-col items-center justify-center text-center group hover:border-secondary transition-all cursor-pointer">
+      <label
+        className={`border-2 border-dashed ${isDragActive ? 'border-secondary' : 'border-secondary/30'} bg-surface-container-low/30 rounded-xl p-6 sm:p-8 flex flex-col items-center justify-center text-center group hover:border-secondary transition-all cursor-pointer`}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <input
           type="file"
           accept=".csv,.xlsx,.xls"
