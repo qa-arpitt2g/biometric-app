@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import sessionStore from '@/lib/sessionStore';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD;
 const AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET;
 
-// Simple in-memory rate limiting (for production use a persistent store like Redis)
+// Simple in-memory rate limiting
 const loginAttempts = new Map();
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutes
@@ -24,12 +25,6 @@ function createAuthToken(email, sessionId, expiresAt) {
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
-}
-
-function ensureAuthEnvironment() {
-  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-    throw new Error('Missing authentication environment variables');
-  }
 }
 
 function checkRateLimit(email) {
@@ -61,76 +56,55 @@ function recordLoginAttempt(email) {
 
 export async function POST(request) {
   try {
-    const body = await request.json().catch(() => null);
+    // CSRF Protection: Verify Origin
+    const origin = request.headers.get('origin');
+    const host = request.headers.get('host');
+    if (origin && !origin.includes(host)) {
+      console.warn(`[SECURITY] CSRF attempt detected from origin: ${origin}`);
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
+    const body = await request.json().catch(() => null);
     if (!body || typeof body !== 'object') {
-      return NextResponse.json(
-        { error: 'Invalid request body' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
     const { email, password, rememberMe = false } = body;
-
     if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Credentials required' }, { status: 400 });
     }
 
     const sanitizedEmail = String(email).trim().toLowerCase();
-
     if (!isValidEmail(sanitizedEmail)) {
-      return NextResponse.json(
-        { error: 'Invalid email address format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
     }
 
     const rateLimit = checkRateLimit(sanitizedEmail);
     if (!rateLimit.allowed) {
-      console.warn(`[SECURITY] Rate limit exceeded for email: ${sanitizedEmail}`);
+      console.warn(`[SECURITY] Rate limit exceeded: ${sanitizedEmail}`);
       return NextResponse.json(
-        {
-          error: `Too many login attempts. Please try again in ${rateLimit.retryAfter} seconds`,
-          retryAfter: rateLimit.retryAfter,
-        },
+        { error: `Too many attempts. Retry in ${rateLimit.retryAfter}s`, retryAfter: rateLimit.retryAfter },
         { status: 429 }
       );
     }
 
-    ensureAuthEnvironment();
-
-    if (!AUTH_TOKEN_SECRET) {
-      console.error('[ERROR] Missing auth token secret');
-      return NextResponse.json(
-        { error: 'Server authentication is not configured' },
-        { status: 500 }
-      );
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD_HASH || !AUTH_TOKEN_SECRET) {
+      console.error('[ERROR] Auth environment misconfigured');
+      return NextResponse.json({ error: 'Authentication unavailable' }, { status: 500 });
     }
 
-    if (
-      sanitizedEmail !== ADMIN_EMAIL ||
-      String(password) !== ADMIN_PASSWORD
-    ) {
-      recordLoginAttempt(sanitizedEmail);
-      const rateCheckAfter = checkRateLimit(sanitizedEmail);
+    // Verify password against stored hash
+    console.log(`[DEBUG] Attempt: "${sanitizedEmail}" | Admin: "${ADMIN_EMAIL}"`);
+    const passwordMatch = sanitizedEmail === ADMIN_EMAIL && await bcrypt.compare(String(password), ADMIN_PASSWORD_HASH);
 
+    if (!passwordMatch) {
+      recordLoginAttempt(sanitizedEmail);
       console.warn(`[SECURITY] Failed login attempt for: ${sanitizedEmail}`);
-      return NextResponse.json(
-        {
-          error: 'Invalid email or password',
-          attemptsRemaining: rateCheckAfter.remaining,
-        },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
     loginAttempts.delete(sanitizedEmail);
 
-    // Generate a unique session ID for this login
-    // This will invalidate any previous sessions for the same user
     const sessionId = crypto.randomUUID();
     sessionStore.setActiveSession(sanitizedEmail, sessionId);
 
@@ -138,15 +112,12 @@ export async function POST(request) {
     const expiresAt = Date.now() + maxAge * 1000;
     const authToken = createAuthToken(sanitizedEmail, sessionId, expiresAt);
 
-    console.log(`[SECURITY] Successful login: ${sanitizedEmail} (SID: ${sessionId}) at ${new Date().toISOString()}`);
+    console.log(`[AUDIT] Login successful: ${sanitizedEmail} | SID: ${sessionId.slice(0,8)}...`);
 
     const response = NextResponse.json(
       {
         message: 'Login successful',
-        user: {
-          email: sanitizedEmail,
-          role: 'admin',
-        },
+        user: { email: sanitizedEmail, role: 'admin' },
       },
       { status: 200 }
     );
@@ -161,10 +132,7 @@ export async function POST(request) {
 
     return response;
   } catch (error) {
-    console.error('[ERROR] Login endpoint error:', error);
-    return NextResponse.json(
-      { error: 'Failed to process login request' },
-      { status: 500 }
-    );
+    console.error('[ERROR] Internal login error');
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

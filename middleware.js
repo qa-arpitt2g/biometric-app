@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const protectedRoutes = ['/upload', '/dashboard'];
-const publicRoutes = ['/', '/api/auth/login'];
+const protectedRoutes = ['/upload', '/dashboard', '/api/send-email'];
 const AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET;
 
 function isValidEmail(email) {
@@ -53,72 +52,81 @@ async function isValidAuthToken(token, requestUrl) {
     }
 
     const parsed = JSON.parse(payload);
-    if (!parsed || typeof parsed !== 'object') {
+    if (!parsed || typeof parsed !== 'object' || !parsed.email || !parsed.sid || !parsed.exp) {
       return false;
     }
 
-    if (!parsed.email || !isValidEmail(parsed.email)) {
+    if (!isValidEmail(parsed.email) || Date.now() > Number(parsed.exp)) {
       return false;
     }
 
-    if (!parsed.exp || Number.isNaN(Number(parsed.exp)) || Date.now() > Number(parsed.exp)) {
-      return false;
-    }
-
-    // Single Active Session Validation
-    // Edge Middleware calls the Node.js API to validate the session ID
-    // We use the full URL to ensure fetch works correctly in both local and deployed environments
+    // Single Active Session Validation via Internal API
     const origin = new URL(requestUrl).origin;
     const sessionResponse = await fetch(`${origin}/api/auth/session?email=${encodeURIComponent(parsed.email)}`, {
-      headers: { 'Accept': 'application/json' }
+      headers: { 
+        'Accept': 'application/json',
+        'x-session-secret': AUTH_TOKEN_SECRET 
+      }
     });
 
     if (!sessionResponse.ok) {
-      console.warn(`[SECURITY] Failed to fetch active session for ${parsed.email}`);
       return false;
     }
 
     const { sid: activeSid } = await sessionResponse.json();
-    
-    if (!parsed.sid || parsed.sid !== activeSid) {
-      console.warn(`[SECURITY] Session ID mismatch for ${parsed.email}. Token SID: ${parsed.sid}, Active SID: ${activeSid}`);
-      return false;
-    }
-
-    return true;
+    return parsed.sid === activeSid;
   } catch (error) {
-    console.warn('[SECURITY] Invalid auth token or session check failed:', error);
     return false;
   }
 }
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
+  
+  // Public Paths that skip all checks
+  const isPublicApi = pathname === '/api/auth/login' || pathname === '/api/auth/session' || pathname === '/api/test-bcrypt';
+  const isStatic = pathname.startsWith('/_next') || pathname.includes('favicon.ico');
+  const isRoot = pathname === '/';
+
+  if (isPublicApi || isStatic) {
+    return NextResponse.next();
+  }
+
   const authToken = request.cookies.get('authToken')?.value;
+  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route)) || pathname.startsWith('/api/');
 
-  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
+  let response;
 
-  if (isProtectedRoute) {
+  if (isProtectedRoute && !isPublicApi) {
     const tokenValid = await isValidAuthToken(authToken, request.url);
     if (!tokenValid) {
-      console.warn(`[SECURITY] Unauthorized or invalid SID for ${pathname}`);
-      const response = NextResponse.redirect(new URL('/', request.url));
-      // Clear the invalid cookie
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      response = NextResponse.redirect(new URL('/', request.url));
       response.cookies.delete('authToken');
       return response;
     }
   }
 
-  if (pathname === '/' && authToken) {
+  if (isRoot && authToken) {
     const tokenValid = await isValidAuthToken(authToken, request.url);
     if (tokenValid) {
       return NextResponse.redirect(new URL('/upload', request.url));
     }
   }
 
-  return NextResponse.next();
+  response = NextResponse.next();
+
+  // Add Security Headers
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';");
+
+  return response;
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
