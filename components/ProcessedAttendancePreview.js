@@ -166,11 +166,47 @@ function getCellStyle(columnKey, row) {
   return '';
 }
 
+function parseDateFromFileName(fileName) {
+  if (!fileName) {
+    return null;
+  }
+
+  const match = fileName.match(/(\d{4})-(\d{2})-(\d{2})(?:[T _-]?(\d{2})(\d{2})(\d{2})(?:\.(\d{1,3}))?)?/);
+  if (!match) {
+    return null;
+  }
+
+  const [, year, month, day, hour = '00', minute = '00', second = '00', ms = '0'] = match;
+  return new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+    Number(second),
+    Number(ms.padEnd(3, '0'))
+  );
+}
+
+function formatReportDate(date) {
+  const resolvedDate = date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date();
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(resolvedDate);
+}
+
 function buildReportHtml(rows, fileName) {
+  const reportDate = formatReportDate(parseDateFromFileName(fileName));
+  const reportHeading = `Biometric Attendance Report – ${reportDate}`;
   const header = `
-    <div style="font-family:Arial, sans-serif;color:#111;margin-bottom:1.5rem;">
-      <p>Hello,</p>
-      <p>Please find the processed attendance report generated from the uploaded biometric attendance data.</p>
+    <div style="font-family:Arial, sans-serif;color:#111;">
+      <div style="text-align:center;margin-bottom:20px;">
+        <h1 style="margin:0;font-size:24px;font-weight:700;text-align:center;">${escapeHtml(reportHeading)}</h1>
+      </div>
+      <p style="margin:0 0 16px 0;">Hello,</p>
+      <p style="margin:0 0 20px 0;">Please find the processed attendance report generated from the uploaded biometric attendance data.</p>
       <div style="text-align:center;margin-top:20px;">
         <h2 style="margin:0;font-size:20px;font-weight:700;text-decoration:underline;">Attendance Report</h2>
       </div>
