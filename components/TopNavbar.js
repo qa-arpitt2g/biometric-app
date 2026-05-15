@@ -74,9 +74,6 @@ export default function TopNavbar() {
               ></div>
 
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-outline-variant/30 py-2 z-10 animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="px-4 py-2 border-b border-outline-variant/20 mb-1">
-                  <p className="text-xs font-bold text-on-surface-variant tracking-wider uppercase">Administrator</p>
-                </div>
                 <button
                   onClick={handleSignOut}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-error hover:bg-error-container/10 transition-colors"

@@ -67,7 +67,7 @@ function breakCellClass(value) {
     return 'bg-white';
   }
 
-  return minutes > 60 ? 'bg-[#f4cccc] text-[#990000]' : 'bg-[#c6efce] text-[#006100]';
+  return minutes > 65 ? 'bg-[#f4cccc] text-[#990000]' : 'bg-[#c6efce] text-[#006100]';
 }
 
 function ProcessingState() {
@@ -130,7 +130,7 @@ function getExportFill(columnIndex, rowIndex, row) {
   }
 
   if (columnKey === 'totalBreakTime') {
-    return { fgColor: { rgb: timeToMinutes(row.totalBreakTime) > 60 ? 'F4CCCC' : 'C6EFCE' } };
+    return { fgColor: { rgb: timeToMinutes(row.totalBreakTime) > 65 ? 'F4CCCC' : 'C6EFCE' } };
   }
 
   return { fgColor: { rgb: 'FFFFFF' } };
@@ -158,7 +158,7 @@ function getCellStyle(columnKey, row) {
   }
 
   if (columnKey === 'totalBreakTime') {
-    return timeToMinutes(row.totalBreakTime) > 60
+    return timeToMinutes(row.totalBreakTime) > 65
       ? 'background:#f4cccc;color:#990000;'
       : 'background:#c6efce;color:#006100;';
   }
