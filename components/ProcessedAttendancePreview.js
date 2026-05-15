@@ -220,8 +220,8 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
         || (loginFilter === 'warning' && loginMinutes >= 300 && loginMinutes < 540)
         || (loginFilter === 'low' && loginMinutes < 300);
       const matchesBreak = breakFilter === 'all'
-        || (breakFilter === 'excessive' && breakMinutes > 60)
-        || (breakFilter === 'acceptable' && breakMinutes <= 60);
+        || (breakFilter === 'excessive' && breakMinutes > 65)
+        || (breakFilter === 'acceptable' && breakMinutes <= 65);
 
       return matchesName && matchesCode && matchesLogin && matchesBreak;
     });
