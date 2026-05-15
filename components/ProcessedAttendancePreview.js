@@ -167,8 +167,13 @@ function getCellStyle(columnKey, row) {
 }
 
 function buildReportHtml(rows, fileName) {
-  const header = `<div style="font-family:Arial, sans-serif;color:#111;margin-bottom:0.5rem;">
-      <h2 style="margin:0;font-size:18px;font-weight:700;">Attendance Report</h2>
+  const header = `
+    <div style="font-family:Arial, sans-serif;color:#111;margin-bottom:1.5rem;">
+      <p>Hello,</p>
+      <p>Please find the processed attendance report generated from the uploaded biometric attendance data.</p>
+      <div style="text-align:center;margin-top:20px;">
+        <h2 style="margin:0;font-size:20px;font-weight:700;text-decoration:underline;">Attendance Report</h2>
+      </div>
     </div>`;
 
   const tableHeader = `<tr>${attendanceColumns.map((column) => `
