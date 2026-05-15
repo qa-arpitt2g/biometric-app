@@ -54,12 +54,18 @@ export async function POST(request) {
       </div>
     `;
 
+    const formattedFooterDate = new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    }).format(new Date());
+
     const emailContent = `
       <div style="font-family:Arial,sans-serif;color:#111;line-height:1.5;">
         ${sanitizedNote ? `<p><strong>Note from sender:</strong> ${sanitizedNote}</p>` : ''}
         ${bodyHtml}
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
-        <p style="font-size:12px;color:#6b7280;margin:0;">Generated on: ${new Date().toLocaleString()}</p>
+        <p style="font-size:12px;color:#6b7280;margin:0;">Generated on: ${formattedFooterDate}</p>
       </div>
     `;
 
