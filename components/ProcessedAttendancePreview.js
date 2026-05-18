@@ -340,30 +340,30 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
 
   return (
     <>
-      <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-[0px_4px_20px_rgba(26,43,76,0.05)] overflow-hidden fade-in w-full">
-        <div className="px-4 py-3 sm:px-5 sm:py-4 border-b border-outline-variant/30 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <h4 className="font-title-lg text-title-lg text-primary">Daily Attendance Processing Report</h4>
-            <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 truncate">
+      <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl shadow-[0px_4px_20px_rgba(26,43,76,0.05)] overflow-hidden fade-in w-full">
+        <div className="px-5 py-5 sm:px-6 sm:py-6 border-b border-outline-variant/30 flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+          <div className="mb-1 xl:mb-0">
+            <h4 className="font-title-lg text-title-lg text-primary mb-1.5">Daily Attendance Processing Report</h4>
+            <p className="font-body-sm text-body-sm text-on-surface-variant truncate">
               {fileName || 'Processed attendance file'}
             </p>
           </div>
-          <div className="flex flex-col gap-2.5 w-full sm:gap-2 sm:flex-row sm:items-center sm:justify-end sm:w-auto">
-            <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex flex-col gap-3 w-full sm:gap-3 sm:flex-row sm:items-center sm:justify-end sm:w-auto">
+            <div className="flex gap-3 w-full sm:w-auto">
               {onReset ? (
-                <button className="flex-1 sm:flex-none h-10 sm:min-w-[130px] px-2 sm:px-3 py-2 border border-outline-variant/40 bg-white text-primary text-sm font-medium rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all duration-200 ease-out hover:bg-surface-container-low hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 whitespace-nowrap" onClick={onReset} type="button">
+                <button className="flex-1 sm:flex-none h-10 sm:min-w-[130px] px-3 sm:px-4 py-2 border border-outline-variant/40 bg-white text-primary text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-surface-container-low hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 whitespace-nowrap" onClick={onReset} type="button">
                   <span className="material-symbols-outlined text-[18px]">upload_file</span>
                   <span className="hidden sm:inline">Upload New File</span>
                   <span className="sm:hidden">Upload</span>
                 </button>
               ) : null}
-              <button className="flex-1 sm:flex-none h-10 sm:min-w-[130px] px-2 sm:px-3 py-2 border border-outline-variant/40 bg-white text-primary text-sm font-medium rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all duration-200 ease-out hover:bg-surface-container-low hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 whitespace-nowrap" onClick={downloadReport} type="button">
+              <button className="flex-1 sm:flex-none h-10 sm:min-w-[130px] px-3 sm:px-4 py-2 border border-outline-variant/40 bg-white text-primary text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-surface-container-low hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 whitespace-nowrap" onClick={downloadReport} type="button">
                 <span className="material-symbols-outlined text-[18px]">download</span>
                 <span className="hidden sm:inline">Download Report</span>
                 <span className="sm:hidden">Download</span>
               </button>
             </div>
-            <button className="w-full sm:w-auto h-10 sm:min-w-[130px] px-3 py-2 bg-secondary text-on-secondary text-sm font-medium rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-secondary-fixed-dim/85 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40" onClick={() => {
+            <button className="w-full sm:w-auto h-10 sm:min-w-[130px] px-4 py-2 bg-secondary text-on-secondary text-sm font-medium rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-secondary-fixed-dim/85 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40" onClick={() => {
               const title = buildReportTitle(fileName);
               setEmailReportTitle(title);
               setEmailReportHtml(buildReportHtml(filteredRows, fileName));
@@ -375,11 +375,11 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
           </div>
         </div>
 
-        <div className="px-4 py-4 sm:px-6 sm:py-5 bg-surface-container-low/40 border-b border-outline-variant/30 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+        <div className="px-5 py-5 sm:px-6 sm:py-6 bg-surface-container-low/40 border-b border-outline-variant/30 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <label className="relative">
             <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">person_search</span>
             <input
-              className="w-full rounded-lg border border-outline-variant/40 bg-white pl-10 pr-sm py-sm font-body-sm text-body-sm outline-none focus:border-secondary"
+              className="w-full rounded-lg border border-outline-variant/40 bg-white pl-10 pr-sm py-2.5 font-body-sm text-body-sm outline-none focus:border-secondary"
               value={nameQuery}
               onChange={(event) => {
                 setNameQuery(event.target.value);
@@ -392,7 +392,7 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
           <label className="relative">
             <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">badge</span>
             <input
-              className="w-full rounded-lg border border-outline-variant/40 bg-white pl-10 pr-sm py-sm font-body-sm text-body-sm outline-none focus:border-secondary"
+              className="w-full rounded-lg border border-outline-variant/40 bg-white pl-10 pr-sm py-2.5 font-body-sm text-body-sm outline-none focus:border-secondary"
               value={codeQuery}
               onChange={(event) => {
                 setCodeQuery(event.target.value);
@@ -403,7 +403,7 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
             />
           </label>
           <select
-            className="w-full rounded-lg border border-outline-variant/40 bg-white px-sm py-sm font-body-sm text-body-sm outline-none focus:border-secondary"
+            className="w-full rounded-lg border border-outline-variant/40 bg-white px-sm py-2.5 font-body-sm text-body-sm outline-none focus:border-secondary"
             value={loginFilter}
             onChange={(event) => {
               setLoginFilter(event.target.value);
@@ -417,7 +417,7 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
             <option value="low">Under 5 hours (Red)</option>
           </select>
           <select
-            className="w-full rounded-lg border border-outline-variant/40 bg-white px-sm py-sm font-body-sm text-body-sm outline-none focus:border-secondary"
+            className="w-full rounded-lg border border-outline-variant/40 bg-white px-sm py-2.5 font-body-sm text-body-sm outline-none focus:border-secondary"
             value={breakFilter}
             onChange={(event) => {
               setBreakFilter(event.target.value);
@@ -492,7 +492,7 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
           </div>
         </div>
 
-        <div className="px-4 py-3 sm:px-6 sm:py-4 bg-surface-container-low border-t border-outline-variant/30 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="px-5 py-4 sm:px-6 sm:py-5 bg-surface-container-low border-t border-outline-variant/30 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-body-sm text-body-sm text-on-surface-variant">
             Showing {filteredRows.length ? (currentPage - 1) * pageSize + 1 : 0}-{Math.min(currentPage * pageSize, filteredRows.length)} of {filteredRows.length} rows
           </p>

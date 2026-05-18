@@ -1,5 +1,7 @@
+"use client";
 import Link from 'next/link';
 import Brand from './Brand';
+import SignOutDropdown from './SignOutDropdown';
 
 export default function Sidebar() {
   const navItems = [
@@ -9,7 +11,12 @@ export default function Sidebar() {
   return (
     <aside className="relative w-full lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-sidebar-width bg-primary shadow-[0px_4px_20px_rgba(26,43,76,0.05)] flex flex-col py-3 px-3 lg:py-4 lg:px-5 z-50">
       <div className="mb-2 lg:mb-10 px-1">
-        <Brand light={true} className="mb-3 lg:mb-6" />
+        <div className="flex items-center justify-between mb-3 lg:mb-6">
+          <Brand light={true} />
+          <div className="lg:hidden">
+            <SignOutDropdown />
+          </div>
+        </div>
         
         <div className="flex items-center justify-between lg:block gap-3">
           <div className="flex-1 lg:flex-none flex items-center gap-3 p-2 lg:p-3 bg-on-primary/5 rounded-xl border border-on-primary/10">
