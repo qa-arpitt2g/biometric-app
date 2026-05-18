@@ -50,11 +50,11 @@ export default function TopNavbar() {
   };
 
   return (
-    <header className="sticky top-0 w-full z-40 bg-surface/70 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm flex flex-col sm:flex-row sm:justify-between items-center gap-3 px-4 py-3 sm:px-6">
-      <div className="flex items-center gap-3 w-full justify-between">
-        <h2 className="font-headline-sm text-headline-sm font-black text-primary">Attendance Portal</h2>
+    <header className="sticky top-0 w-full z-40 bg-surface/70 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm flex flex-row justify-between items-center gap-3 px-4 py-2 sm:px-6 sm:py-3">
+      <div className="flex items-center gap-3 w-auto">
+        <h2 className="font-title-lg sm:font-headline-sm text-title-lg sm:text-headline-sm font-black text-primary">Attendance Portal</h2>
       </div>
-      <div className="flex items-center gap-3 w-full justify-between sm:justify-end">
+      <div className="flex items-center gap-3 w-auto justify-end">
         {/* Profile Dropdown Container */}
         <div className="relative">
           <button
