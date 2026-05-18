@@ -136,7 +136,7 @@ export function GuidelinesCard() {
       <div className="relative rounded-xl overflow-hidden h-40 group hidden sm:block">
         <Image
           alt="Data Analytics"
-          src="/assets/data-analytics.png"
+          src="/assets/data-analytics.webp"
           fill
           sizes="(min-width: 1024px) 25vw, 100vw"
           className="object-cover group-hover:scale-110 transition-transform duration-500"
@@ -149,7 +149,7 @@ export function GuidelinesCard() {
       <div className="relative rounded-xl overflow-hidden h-40 group hidden sm:block">
         <Image
           alt="Attendance Analytics"
-          src="/assets/attendance-analytics.png"
+          src="/assets/attendance-analytics.webp"
           fill
           sizes="(min-width: 1024px) 25vw, 100vw"
           className="object-cover group-hover:scale-110 transition-transform duration-500"
