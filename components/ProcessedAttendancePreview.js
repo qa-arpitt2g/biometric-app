@@ -348,18 +348,22 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
               {fileName || 'Processed attendance file'}
             </p>
           </div>
-          <div className="flex flex-row flex-wrap items-center gap-2 justify-end w-full sm:w-auto">
-            {onReset ? (
-              <button className="h-10 min-w-[130px] px-3 py-2 border border-outline-variant/40 bg-white text-primary text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-surface-container-low hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30" onClick={onReset} type="button">
-                <span className="material-symbols-outlined text-[18px]">upload_file</span>
-                Upload New File
+          <div className="flex flex-col gap-2.5 w-full sm:gap-2 sm:flex-row sm:items-center sm:justify-end sm:w-auto">
+            <div className="flex gap-2 w-full sm:w-auto">
+              {onReset ? (
+                <button className="flex-1 sm:flex-none h-10 sm:min-w-[130px] px-2 sm:px-3 py-2 border border-outline-variant/40 bg-white text-primary text-sm font-medium rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all duration-200 ease-out hover:bg-surface-container-low hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 whitespace-nowrap" onClick={onReset} type="button">
+                  <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                  <span className="hidden sm:inline">Upload New File</span>
+                  <span className="sm:hidden">Upload</span>
+                </button>
+              ) : null}
+              <button className="flex-1 sm:flex-none h-10 sm:min-w-[130px] px-2 sm:px-3 py-2 border border-outline-variant/40 bg-white text-primary text-sm font-medium rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all duration-200 ease-out hover:bg-surface-container-low hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 whitespace-nowrap" onClick={downloadReport} type="button">
+                <span className="material-symbols-outlined text-[18px]">download</span>
+                <span className="hidden sm:inline">Download Report</span>
+                <span className="sm:hidden">Download</span>
               </button>
-            ) : null}
-            <button className="h-10 min-w-[130px] px-3 py-2 border border-outline-variant/40 bg-white text-primary text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-surface-container-low hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30" onClick={downloadReport} type="button">
-              <span className="material-symbols-outlined text-[18px]">download</span>
-              Download Report
-            </button>
-            <button className="h-10 min-w-[130px] px-3 py-2 bg-secondary text-on-secondary text-sm font-medium rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-secondary-fixed-dim/85 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40" onClick={() => {
+            </div>
+            <button className="w-full sm:w-auto h-10 sm:min-w-[130px] px-3 py-2 bg-secondary text-on-secondary text-sm font-medium rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-secondary-fixed-dim/85 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40" onClick={() => {
               const title = buildReportTitle(fileName);
               setEmailReportTitle(title);
               setEmailReportHtml(buildReportHtml(filteredRows, fileName));
