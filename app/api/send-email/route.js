@@ -64,8 +64,6 @@ export async function POST(request) {
       <div style="font-family:Arial,sans-serif;color:#111;line-height:1.5;">
         ${sanitizedNote ? `<p><strong>Note from sender:</strong> ${sanitizedNote}</p>` : ''}
         ${bodyHtml}
-        <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
-        <p style="font-size:12px;color:#6b7280;margin:0;">Generated on: ${formattedFooterDate}</p>
       </div>
     `;
 
