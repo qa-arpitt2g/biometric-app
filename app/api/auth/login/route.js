@@ -89,7 +89,11 @@ export async function POST(request) {
     }
 
     if (!ADMIN_EMAIL || !ADMIN_PASSWORD_HASH || !AUTH_TOKEN_SECRET) {
-      console.error('[ERROR] Auth environment misconfigured');
+      console.error('[ERROR] Auth environment misconfigured:', {
+        ADMIN_EMAIL: ADMIN_EMAIL ? 'present' : 'missing',
+        ADMIN_PASSWORD: ADMIN_PASSWORD_HASH ? 'present' : 'missing',
+        AUTH_TOKEN_SECRET: AUTH_TOKEN_SECRET ? 'present' : 'missing'
+      });
       return NextResponse.json({ error: 'Authentication unavailable' }, { status: 500 });
     }
 
@@ -112,7 +116,7 @@ export async function POST(request) {
     const expiresAt = Date.now() + maxAge * 1000;
     const authToken = createAuthToken(sanitizedEmail, sessionId, expiresAt);
 
-    console.log(`[AUDIT] Login successful: ${sanitizedEmail} | SID: ${sessionId.slice(0,8)}...`);
+    console.log(`[AUDIT] Login successful: ${sanitizedEmail} | SID: ${sessionId.slice(0, 8)}...`);
 
     const response = NextResponse.json(
       {
