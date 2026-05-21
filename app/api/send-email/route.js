@@ -23,9 +23,13 @@ export async function POST(request) {
     }
 
     const emailUser = process.env.EMAIL_USER;
-    const emailPassword = process.env.EMAIL_PASSWORD;
+    let emailPassword = process.env.EMAIL_PASSWORD;
     const emailService = process.env.EMAIL_SERVICE || 'gmail';
     const emailFrom = process.env.EMAIL_FROM || emailUser;
+
+    if (emailPassword && (emailPassword.startsWith('"') || emailPassword.startsWith("'")) && (emailPassword.endsWith('"') || emailPassword.endsWith("'"))) {
+      emailPassword = emailPassword.slice(1, -1);
+    }
 
     if (!emailUser || !emailPassword) {
       console.error('[ERROR] Missing email environment variables');
@@ -35,19 +39,41 @@ export async function POST(request) {
       );
     }
 
-    const transporter = nodemailer.createTransport({
-      service: emailService,
-      auth: {
-        user: emailUser,
-        pass: emailPassword,
-      },
-    });
+    // Configure transporter based on service type
+    let transporterConfig;
+    if (emailService === 'custom') {
+      transporterConfig = {
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT || '465'),
+        secure: process.env.EMAIL_SECURE === 'true',
+        authMethod: 'LOGIN',
+        auth: {
+          user: emailUser,
+          pass: emailPassword,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+        logger: true,
+        debug: true,
+      };
+    } else {
+      transporterConfig = {
+        service: emailService,
+        auth: {
+          user: emailUser,
+          pass: emailPassword,
+        },
+      };
+    }
+
+    const transporter = nodemailer.createTransport(transporterConfig);
 
     await transporter.verify();
 
     const sanitizedNote = note ? String(note).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
     const bodyHtml = reportHtml || `
-      <div style="font-family:Arial,sans-serif;color:#111;">
+      <div style="font-family:OpenSans,sans-serif;color:#111;">
         <h2>Biometric Attendance Report</h2>
         <p>Please find the attendance report attached to this email.</p>
         <p><strong>This report contains sensitive PII data and has been encrypted during transit.</strong></p>
@@ -61,7 +87,7 @@ export async function POST(request) {
     }).format(new Date());
 
     const emailContent = `
-      <div style="font-family:Arial,sans-serif;color:#111;line-height:1.5;">
+      <div style="font-family:OpenSans,sans-serif;color:#111;line-height:1.5;">
         ${sanitizedNote ? `<p><strong>Note from sender:</strong> ${sanitizedNote}</p>` : ''}
         ${bodyHtml}
       </div>
