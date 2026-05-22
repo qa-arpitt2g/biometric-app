@@ -205,7 +205,7 @@ function buildReportTitle(fileName) {
 function buildReportHtml(rows, fileName) {
   const reportHeading = buildReportTitle(fileName);
   const header = `
-    <div style="font-family:'Open Sans', sans-serif;font-size:22px;color:#111;">
+    <div style="font-family:'Open Sans', sans-serif;font-size:14px;color:#111;">
       <div style="text-align:center;margin-bottom:20px;">
         <h1 style="margin:0;font-size:24px;font-weight:700;text-align:center;">${escapeHtml(reportHeading)}</h1>
       </div>
