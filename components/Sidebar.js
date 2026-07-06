@@ -30,7 +30,7 @@ export default function Sidebar() {
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-on-primary text-sm leading-none">HR Dashboard</span>
+              <span className="font-bold text-on-primary text-sm leading-none">Admin</span>
             </div>
           </div>
 
