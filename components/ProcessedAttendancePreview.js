@@ -416,30 +416,28 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
 
   return (
     <>
-      <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl shadow-[0px_4px_20px_rgba(26,43,76,0.05)] overflow-hidden fade-in w-full">
-        <div className="px-5 py-5 sm:px-6 sm:py-6 border-b border-outline-variant/30 flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-          <div className="mb-1 xl:mb-0">
+      <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl shadow-[0px_4px_20px_rgba(26,43,76,0.05)] overflow-hidden fade-in w-full min-w-0 max-w-full">
+        <div className="px-4 py-4 sm:px-5 sm:py-5 border-b border-outline-variant/30 flex flex-col gap-4 min-w-0">
+          <div className="min-w-0">
             <h4 className="font-title-lg text-title-lg text-primary mb-1.5">Daily Attendance Processing Report</h4>
             <p className="font-body-sm text-body-sm text-on-surface-variant truncate">
               {fileName || 'Processed attendance file'}
             </p>
           </div>
-          <div className="flex flex-col gap-3 w-full sm:gap-3 sm:flex-row sm:items-center sm:justify-end sm:w-auto">
-            <div className="flex gap-3 w-full sm:w-auto">
-              {onReset ? (
-                <button className="flex-1 sm:flex-none h-10 sm:min-w-[130px] px-3 sm:px-4 py-2 border border-outline-variant/40 bg-white text-primary text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-surface-container-low hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 whitespace-nowrap" onClick={onReset} type="button">
-                  <span className="material-symbols-outlined text-[18px]">upload_file</span>
-                  <span className="hidden sm:inline">Upload New File</span>
-                  <span className="sm:hidden">Upload</span>
-                </button>
-              ) : null}
-              <button className="flex-1 sm:flex-none h-10 sm:min-w-[130px] px-3 sm:px-4 py-2 border border-outline-variant/40 bg-white text-primary text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-surface-container-low hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 whitespace-nowrap" onClick={downloadReport} type="button">
-                <span className="material-symbols-outlined text-[18px]">download</span>
-                <span className="hidden sm:inline">Download Report</span>
-                <span className="sm:hidden">Download</span>
+          <div className="flex flex-wrap gap-2 items-center min-w-0">
+            {onReset ? (
+              <button className="h-9 px-3 py-2 border border-outline-variant/40 bg-white text-primary text-sm font-medium rounded-lg inline-flex items-center justify-center gap-1.5 transition-all duration-200 ease-out hover:bg-surface-container-low hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 whitespace-nowrap shrink-0" onClick={onReset} type="button">
+                <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                <span className="hidden sm:inline">Upload New File</span>
+                <span className="sm:hidden">Upload</span>
               </button>
-            </div>
-            <button className="w-full sm:w-auto h-10 sm:min-w-[130px] px-4 py-2 bg-secondary text-on-secondary text-sm font-medium rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-secondary-fixed-dim/85 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40 disabled:opacity-60 disabled:cursor-not-allowed" onClick={async () => {
+            ) : null}
+            <button className="h-9 px-3 py-2 border border-outline-variant/40 bg-white text-primary text-sm font-medium rounded-lg inline-flex items-center justify-center gap-1.5 transition-all duration-200 ease-out hover:bg-surface-container-low hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 whitespace-nowrap shrink-0" onClick={downloadReport} type="button">
+              <span className="material-symbols-outlined text-[18px]">download</span>
+              <span className="hidden sm:inline">Download Report</span>
+              <span className="sm:hidden">Download</span>
+            </button>
+            <button className="h-9 px-3 py-2 bg-secondary text-on-secondary text-sm font-medium rounded-lg shadow-sm inline-flex items-center justify-center gap-1.5 transition-all duration-200 ease-out hover:bg-secondary-fixed-dim/85 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap shrink-0" onClick={async () => {
               setEmailPrepError('');
               setIsPreparingEmail(true);
               try {

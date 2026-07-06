@@ -12,9 +12,9 @@ export default function AttendancePage() {
     <div className="min-h-screen bg-background text-on-background">
       <div className="flex min-h-screen flex-col lg:flex-row">
         <Sidebar />
-        <main className="flex-1 min-h-screen lg:ml-sidebar-width">
+        <main className="flex-1 min-h-screen min-w-0 overflow-x-hidden lg:ml-sidebar-width">
           <TopNavbar />
-          <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 max-w-screen-2xl mx-auto">
+          <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 max-w-screen-2xl mx-auto min-w-0">
             <div className="mb-4 sm:mb-8">
               <h3 className="font-headline-md text-headline-md text-primary mb-2">Attendance</h3>
               <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">

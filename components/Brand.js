@@ -1,6 +1,6 @@
 import Image from 'next/image';
 
-export default function Brand({ className = "", light = false }) {
+export default function Brand({ className = "", light = false, compact = false }) {
   return (
     <div className={`flex items-center ${className}`}>
       <Image
@@ -8,8 +8,7 @@ export default function Brand({ className = "", light = false }) {
         alt="Tech2Globe Logo"
         width={200}
         height={80}
-        // When 'light' is true (on dark backgrounds), we use a filter to make the logo white.
-        className={`h-12 w-auto object-contain ${light ? 'brightness-0 invert' : ''}`}
+        className={`${compact ? 'h-9' : 'h-12'} w-auto object-contain ${light ? 'brightness-0 invert' : ''}`}
         priority
       />
     </div>

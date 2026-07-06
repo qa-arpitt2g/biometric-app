@@ -13,19 +13,19 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="relative w-full lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-sidebar-width bg-primary shadow-[0px_4px_20px_rgba(26,43,76,0.05)] flex flex-col py-3 px-3 lg:py-4 lg:px-5 z-50">
-      <div className="mb-2 lg:mb-10 px-1">
-        <div className="flex items-center justify-between mb-3 lg:mb-6">
-          <Brand light={true} />
+    <aside className="relative w-full lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-sidebar-width bg-primary shadow-[0px_4px_20px_rgba(26,43,76,0.05)] flex flex-col py-3 px-3 lg:py-3 lg:px-3 z-50 overflow-hidden">
+      <div className="mb-2 lg:mb-6 px-0.5">
+        <div className="flex items-center justify-between mb-3 lg:mb-4">
+          <Brand light={true} compact />
           <div className="lg:hidden">
             <SignOutDropdown />
           </div>
         </div>
 
         <div className="flex items-center justify-between lg:block gap-3">
-          <div className="flex-1 lg:flex-none flex items-center gap-3 p-2 lg:p-3 bg-on-primary/5 rounded-xl border border-on-primary/10">
-            <div className="relative">
-              <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center font-bold text-sm lg:text-base shadow-sm">
+          <div className="flex-1 lg:flex-none flex items-center gap-2 p-2 lg:p-2.5 bg-on-primary/5 rounded-xl border border-on-primary/10 min-w-0">
+            <div className="relative shrink-0">
+              <div className="w-8 h-8 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center font-bold text-sm shadow-sm">
                 A
               </div>
             </div>
@@ -64,13 +64,13 @@ export default function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center gap-sm px-md py-sm transition-colors rounded-lg group ${isActive
+              className={`flex items-center gap-2 px-3 py-2 transition-colors rounded-lg group ${isActive
                 ? 'bg-secondary-container text-on-secondary-container'
                 : 'text-on-primary/70 hover:bg-primary-fixed-dim/10 hover:text-on-primary'
                 }`}
             >
-              <span className="material-symbols-outlined">{item.icon}</span>
-              <span className="font-body-md text-body-md">{item.name}</span>
+              <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+              <span className="font-body-sm text-body-sm">{item.name}</span>
             </Link>
           );
         })}
