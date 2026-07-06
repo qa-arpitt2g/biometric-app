@@ -2,25 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-function isValidEmail(value) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
-function parseEmails(value) {
-  return value
-    .split(',')
-    .map((email) => email.trim())
-    .filter((email) => email.length > 0);
-}
-
-async function sendReportEmail({ emails, note, reportHtml, reportTitle }) {
+async function sendReportEmail({ toEmail, ccEmails, note, reportHtml, reportTitle }) {
   const response = await fetch('/api/send-email', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      emails,
+      toEmail,
+      ccEmails,
       note,
       reportHtml,
       reportTitle,
@@ -35,15 +25,19 @@ async function sendReportEmail({ emails, note, reportHtml, reportTitle }) {
   return response.json();
 }
 
-export default function EmailReportModal({ isOpen, onClose, onSent, reportHtml, reportTitle }) {
-  const [email, setEmail] = useState('');
+export default function EmailReportModal({
+  isOpen,
+  onClose,
+  onSent,
+  emailBatches = [],
+  summaryTitle = 'Biometric Attendance Report',
+}) {
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const emailInputRef = useRef(null);
+  const noteInputRef = useRef(null);
 
   const handleClose = useCallback(() => {
-    setEmail('');
     setNote('');
     setError('');
     setIsSending(false);
@@ -55,7 +49,7 @@ export default function EmailReportModal({ isOpen, onClose, onSent, reportHtml, 
       return undefined;
     }
 
-    const focusTimer = window.setTimeout(() => emailInputRef.current?.focus(), 80);
+    const focusTimer = window.setTimeout(() => noteInputRef.current?.focus(), 80);
 
     function handleKeyDown(event) {
       if (event.key === 'Escape') {
@@ -74,29 +68,25 @@ export default function EmailReportModal({ isOpen, onClose, onSent, reportHtml, 
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!email.trim()) {
-      setError('At least one recipient email is required.');
-      return;
-    }
-
-    const emails = parseEmails(email);
-    if (emails.length === 0) {
-      setError('Please enter at least one valid email address.');
-      return;
-    }
-
-    const invalidEmails = emails.filter((e) => !isValidEmail(e));
-    if (invalidEmails.length > 0) {
-      setError(`Invalid email address(es): ${invalidEmails.join(', ')}`);
+    if (!emailBatches.length) {
+      setError('No department recipient batches found for this report.');
       return;
     }
 
     setError('');
     setIsSending(true);
     try {
-      await sendReportEmail({ emails, note, reportHtml, reportTitle });
+      for (const batch of emailBatches) {
+        await sendReportEmail({
+          toEmail: batch.toEmail,
+          ccEmails: batch.ccEmails,
+          note,
+          reportHtml: batch.reportHtml,
+          reportTitle: batch.reportTitle,
+        });
+      }
       handleClose();
-      onSent?.();
+      onSent?.(emailBatches.length);
     } catch (err) {
       setError(err.message || 'Failed to send email. Please try again.');
       setIsSending(false);
@@ -126,8 +116,8 @@ export default function EmailReportModal({ isOpen, onClose, onSent, reportHtml, 
               <span className="material-symbols-outlined">mail</span>
             </div>
             <div>
-              <h4 id="send-report-title" className="font-title-lg text-title-lg text-primary">Send Report via Email</h4>
-              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Summary Report</p>
+              <h4 id="send-report-title" className="font-title-lg text-title-lg text-primary">Send Department Reports</h4>
+              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">{summaryTitle}</p>
             </div>
           </div>
           <button
@@ -141,35 +131,14 @@ export default function EmailReportModal({ isOpen, onClose, onSent, reportHtml, 
         </div>
 
         <form className="p-md space-y-md" onSubmit={handleSubmit} noValidate>
-          <label className="block">
-            <span className="font-body-sm text-body-sm font-semibold text-primary">Recipient Email Address(es)</span>
-            <p className="font-body-xs text-body-xs text-on-surface-variant mt-1">Enter one or more emails separated by commas</p>
-            <div className={`mt-xs flex items-center gap-xs rounded-lg border bg-white px-sm py-sm transition-colors ${error ? 'border-error' : 'border-outline-variant/40 focus-within:border-secondary'}`}>
-              <span className="material-symbols-outlined text-on-surface-variant text-[20px]">alternate_email</span>
-              <input
-                ref={emailInputRef}
-                className="w-full bg-transparent font-body-sm text-body-sm outline-none"
-                type="email"
-                value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value);
-                  if (error) {
-                    setError('');
-                  }
-                }}
-                placeholder="Enter The Recipient Email"
-                aria-invalid={Boolean(error)}
-                aria-describedby={error ? 'email-error' : undefined}
-              />
-            </div>
-            {error ? (
-              <span id="email-error" className="mt-xs block font-body-sm text-body-sm text-error">{error}</span>
-            ) : null}
-          </label>
+          {error ? (
+            <span className="block font-body-sm text-body-sm text-error">{error}</span>
+          ) : null}
 
           <label className="block">
             <span className="font-body-sm text-body-sm font-semibold text-primary">Add a Note <span className="text-on-surface-variant font-normal">(Optional)</span></span>
             <textarea
+              ref={noteInputRef}
               className="mt-xs w-full min-h-28 rounded-lg border border-outline-variant/40 bg-white px-sm py-sm font-body-sm text-body-sm outline-none focus:border-secondary resize-y"
               value={note}
               onChange={(event) => setNote(event.target.value)}
@@ -198,7 +167,7 @@ export default function EmailReportModal({ isOpen, onClose, onSent, reportHtml, 
             <button
               className="px-md py-sm bg-secondary text-on-secondary rounded-lg font-bold shadow-md hover:bg-secondary-fixed-dim/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-xs min-w-28 justify-center"
               type="submit"
-              disabled={!email.trim() || isSending}
+              disabled={!emailBatches.length || isSending}
             >
               {isSending ? (
                 <span className="w-4 h-4 rounded-full border-2 border-on-secondary/40 border-t-on-secondary animate-spin" aria-hidden="true"></span>

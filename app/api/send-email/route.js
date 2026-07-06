@@ -3,18 +3,23 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const { emails, note, reportHtml, reportTitle } = await request.json();
+    const { emails, toEmail, ccEmails, note, reportHtml, reportTitle } = await request.json();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const toList = Array.isArray(emails)
+      ? emails.map((email) => String(email).trim()).filter(Boolean)
+      : [String(toEmail || '').trim()].filter(Boolean);
+    const ccList = Array.isArray(ccEmails)
+      ? ccEmails.map((email) => String(email).trim()).filter(Boolean)
+      : [];
 
-    if (!Array.isArray(emails) || emails.length === 0) {
+    if (toList.length === 0) {
       return NextResponse.json(
         { error: 'At least one recipient email is required' },
         { status: 400 }
       );
     }
 
-    // Validate all emails
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const invalidEmails = emails.filter((email) => !emailRegex.test(String(email).trim()));
+    const invalidEmails = [...toList, ...ccList].filter((email) => !emailRegex.test(email));
     if (invalidEmails.length > 0) {
       return NextResponse.json(
         { error: `Invalid email address(es): ${invalidEmails.join(', ')}` },
@@ -80,12 +85,6 @@ export async function POST(request) {
       </div>
     `;
 
-    const formattedFooterDate = new Intl.DateTimeFormat('en-GB', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    }).format(new Date());
-
     const emailContent = `
       <div style="font-family:OpenSans,sans-serif;color:#111;line-height:1.5;">
         ${sanitizedNote ? `<p><strong>Note from sender:</strong> ${sanitizedNote}</p>` : ''}
@@ -95,7 +94,8 @@ export async function POST(request) {
 
     const mailOptions = {
       from: `"Biometric Attendance" <${emailFrom}>`,
-      to: emails.map((e) => String(e).trim()).join(', '),
+      to: toList.join(', '),
+      ...(ccList.length > 0 ? { cc: ccList.join(', ') } : {}),
       subject: reportTitle || 'Biometric Attendance Report',
       html: emailContent,
     };
@@ -103,7 +103,11 @@ export async function POST(request) {
     const info = await transporter.sendMail(mailOptions);
 
     return NextResponse.json(
-      { message: `Email sent successfully to ${emails.length} recipient(s)`, messageId: info.messageId },
+      {
+        message: `Email sent successfully to ${toList.length} recipient(s)`,
+        ccCount: ccList.length,
+        messageId: info.messageId,
+      },
       { status: 200 }
     );
   } catch (error) {

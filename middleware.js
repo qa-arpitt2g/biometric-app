@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const protectedRoutes = ['/upload', '/dashboard', '/api/send-email'];
+const protectedRoutes = ['/employees', '/attendance', '/dashboard', '/api/send-email'];
 const AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET;
 
 function isValidEmail(email) {
@@ -112,7 +112,7 @@ export async function middleware(request) {
   if (isRoot && authToken) {
     const tokenValid = await isValidAuthToken(authToken, request.url);
     if (tokenValid) {
-      return NextResponse.redirect(new URL('/upload', request.url));
+      return NextResponse.redirect(new URL('/employees', request.url));
     }
   }
 

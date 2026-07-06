@@ -202,15 +202,33 @@ function buildReportTitle(fileName) {
   return `Biometric Attendance Report – ${reportDate}`;
 }
 
-function buildReportHtml(rows, fileName) {
+const HARPREET_EMAIL = 'harpreet@tech2globe.com';
+const HR_EMAIL = 'hr@tech2globe.com';
+
+function buildCcList(toEmail) {
+  const normalized = String(toEmail || '').trim().toLowerCase();
+  return normalized === HARPREET_EMAIL
+    ? [HR_EMAIL]
+    : [HARPREET_EMAIL, HR_EMAIL];
+}
+
+function normalizeEmployeeCode(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function buildReportHtml(rows, fileName, options = {}) {
+  const { department } = options;
   const reportHeading = buildReportTitle(fileName);
+  const introLine = department
+    ? `Please find the processed attendance report for department: <strong>${escapeHtml(department)}</strong>.`
+    : 'Please find the processed attendance report generated from the uploaded biometric attendance data.';
   const header = `
     <div style="font-family:'Open Sans', sans-serif;font-size:14px;color:#111;">
       <div style="text-align:center;margin-bottom:20px;">
         <h1 style="margin:0;font-size:24px;font-weight:700;text-align:center;">${escapeHtml(reportHeading)}</h1>
       </div>
       <p style="margin:0 0 16px 0;">Hello,</p>
-      <p style="margin:0 0 20px 0;">Please find the processed attendance report generated from the uploaded biometric attendance data.</p>
+      <p style="margin:0 0 20px 0;">${introLine}</p>
     </div>`;
 
   const tableHeader = `<tr>${attendanceColumns.map((column) => `
@@ -235,6 +253,62 @@ function buildReportHtml(rows, fileName) {
   `;
 }
 
+async function buildDepartmentEmailBatches(rows, fileName) {
+  const employeesResponse = await fetch('/api/employees', {
+    method: 'GET',
+    credentials: 'same-origin',
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+
+  if (!employeesResponse.ok) {
+    throw new Error('Failed to load employees for email routing.');
+  }
+
+  const payload = await employeesResponse.json();
+  const employees = Array.isArray(payload?.employees) ? payload.employees : [];
+  const employeesByCode = new Map(
+    employees.map((employee) => [
+      normalizeEmployeeCode(employee.employeeCode),
+      employee,
+    ]),
+  );
+  const grouped = new Map();
+
+  rows.forEach((row) => {
+    const employee = employeesByCode.get(normalizeEmployeeCode(row.employeeCode));
+    if (!employee?.hodEmail) {
+      return;
+    }
+
+    const department = String(employee.department || 'General').trim() || 'General';
+    const toEmail = String(employee.hodEmail).trim().toLowerCase();
+    const key = `${department}__${toEmail}`;
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        department,
+        toEmail,
+        rows: [],
+      });
+    }
+    grouped.get(key).rows.push(row);
+  });
+
+  if (grouped.size === 0) {
+    throw new Error('No matching employee routing found. Please ensure Employee Code and HOD Email are available in Employee data.');
+  }
+
+  return Array.from(grouped.values()).map((group) => ({
+    department: group.department,
+    toEmail: group.toEmail,
+    ccEmails: buildCcList(group.toEmail),
+    reportTitle: `${buildReportTitle(fileName)} - ${group.department}`,
+    reportHtml: buildReportHtml(group.rows, fileName, { department: group.department }),
+    rowCount: group.rows.length,
+  }));
+}
+
 export default function ProcessedAttendancePreview({ rows = [], isProcessing = false, fileName, onReset }) {
   const [nameQuery, setNameQuery] = useState('');
   const [codeQuery, setCodeQuery] = useState('');
@@ -243,8 +317,10 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
   const [page, setPage] = useState(1);
   const [scrollTop, setScrollTop] = useState(0);
   const [isEmailOpen, setIsEmailOpen] = useState(false);
-  const [emailReportHtml, setEmailReportHtml] = useState('');
-  const [emailReportTitle, setEmailReportTitle] = useState('Biometric Attendance Report');
+  const [emailBatches, setEmailBatches] = useState([]);
+  const [emailSummaryTitle, setEmailSummaryTitle] = useState('Biometric Attendance Report');
+  const [isPreparingEmail, setIsPreparingEmail] = useState(false);
+  const [emailPrepError, setEmailPrepError] = useState('');
   const [showToast, setShowToast] = useState(false);
 
   const filteredRows = useMemo(() => {
@@ -363,17 +439,32 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
                 <span className="sm:hidden">Download</span>
               </button>
             </div>
-            <button className="w-full sm:w-auto h-10 sm:min-w-[130px] px-4 py-2 bg-secondary text-on-secondary text-sm font-medium rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-secondary-fixed-dim/85 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40" onClick={() => {
-              const title = buildReportTitle(fileName);
-              setEmailReportTitle(title);
-              setEmailReportHtml(buildReportHtml(filteredRows, fileName));
-              setIsEmailOpen(true);
-            }} type="button">
+            <button className="w-full sm:w-auto h-10 sm:min-w-[130px] px-4 py-2 bg-secondary text-on-secondary text-sm font-medium rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all duration-200 ease-out hover:bg-secondary-fixed-dim/85 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/40 disabled:opacity-60 disabled:cursor-not-allowed" onClick={async () => {
+              setEmailPrepError('');
+              setIsPreparingEmail(true);
+              try {
+                const batches = await buildDepartmentEmailBatches(filteredRows, fileName);
+                setEmailBatches(batches);
+                setEmailSummaryTitle(buildReportTitle(fileName));
+                setIsEmailOpen(true);
+              } catch (error) {
+                setEmailPrepError(error.message || 'Unable to prepare department emails.');
+              } finally {
+                setIsPreparingEmail(false);
+              }
+            }} type="button" disabled={isPreparingEmail}>
               <span className="material-symbols-outlined text-[18px]">mail</span>
-              Send Report
+              {isPreparingEmail ? 'Preparing...' : 'Send Report'}
             </button>
           </div>
         </div>
+        {emailPrepError ? (
+          <div className="px-5 pb-4 sm:px-6 sm:pb-5">
+            <div className="rounded-lg border border-error/30 bg-error-container/20 px-3 py-2 text-error text-sm">
+              {emailPrepError}
+            </div>
+          </div>
+        ) : null}
 
         <div className="px-5 py-5 sm:px-6 sm:py-6 bg-surface-container-low/40 border-b border-outline-variant/30 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <label className="relative">
@@ -526,10 +617,10 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
 
       <EmailReportModal
         isOpen={isEmailOpen}
-        reportTitle={emailReportTitle}
-        reportHtml={emailReportHtml}
+        summaryTitle={emailSummaryTitle}
+        emailBatches={emailBatches}
         onClose={() => setIsEmailOpen(false)}
-        onSent={() => {
+        onSent={(count) => {
           setShowToast(true);
           window.setTimeout(() => setShowToast(false), 2800);
         }}

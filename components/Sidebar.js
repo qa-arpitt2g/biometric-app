@@ -1,11 +1,15 @@
 "use client";
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import Brand from './Brand';
 import SignOutDropdown from './SignOutDropdown';
 
 export default function Sidebar() {
+  const pathname = usePathname();
+
   const navItems = [
-    { name: 'Upload', icon: 'cloud_upload', href: '/upload', active: true },
+    { name: 'Employee', icon: 'groups', href: '/employees' },
+    { name: 'Attendance', icon: 'event_available', href: '/attendance' },
   ];
 
   return (
@@ -31,37 +35,45 @@ export default function Sidebar() {
           </div>
 
           <nav className="flex lg:hidden flex-1 justify-end">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center gap-2 px-3 py-2 transition-colors rounded-lg group ${item.active
-                  ? 'bg-secondary-container text-on-secondary-container'
-                  : 'text-on-primary/70 hover:bg-primary-fixed-dim/10 hover:text-on-primary'
-                  }`}
-              >
-                <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
-                <span className="font-body-sm text-body-sm">{item.name}</span>
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center gap-2 px-3 py-2 transition-colors rounded-lg group ${isActive
+                    ? 'bg-secondary-container text-on-secondary-container'
+                    : 'text-on-primary/70 hover:bg-primary-fixed-dim/10 hover:text-on-primary'
+                    }`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
+                  <span className="font-body-sm text-body-sm">{item.name}</span>
+                </Link>
+              );
+            })}
           </nav>
         </div>
       </div>
 
       <nav className="hidden lg:flex flex-1 flex-col space-y-xs">
-        {navItems.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            className={`flex items-center gap-sm px-md py-sm transition-colors rounded-lg group ${item.active
-              ? 'bg-secondary-container text-on-secondary-container'
-              : 'text-on-primary/70 hover:bg-primary-fixed-dim/10 hover:text-on-primary'
-              }`}
-          >
-            <span className="material-symbols-outlined">{item.icon}</span>
-            <span className="font-body-md text-body-md">{item.name}</span>
-          </Link>
-        ))}
+        {navItems.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex items-center gap-sm px-md py-sm transition-colors rounded-lg group ${isActive
+                ? 'bg-secondary-container text-on-secondary-container'
+                : 'text-on-primary/70 hover:bg-primary-fixed-dim/10 hover:text-on-primary'
+                }`}
+            >
+              <span className="material-symbols-outlined">{item.icon}</span>
+              <span className="font-body-md text-body-md">{item.name}</span>
+            </Link>
+          );
+        })}
       </nav>
     </aside>
   );

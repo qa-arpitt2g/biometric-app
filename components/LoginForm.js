@@ -87,7 +87,7 @@ export default function LoginForm() {
 
       console.log('[SECURITY] User authenticated:', data.user?.email || 'admin');
 
-      router.push('/upload');
+      router.push('/employees');
     } catch (err) {
       console.error('[ERROR] Login error:', err);
       setError('An error occurred. Please try again.');

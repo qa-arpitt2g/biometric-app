@@ -39,8 +39,9 @@ yarn-error.log*
 # example env template
 !.env.example
 
-# vercel
-.vercel
+# local data
+/data/employees.json
+
 
 # typescript
 *.tsbuildinfo
