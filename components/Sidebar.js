@@ -21,7 +21,7 @@ export default function Sidebar() {
             <SignOutDropdown />
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between lg:block gap-3">
           <div className="flex-1 lg:flex-none flex items-center gap-3 p-2 lg:p-3 bg-on-primary/5 rounded-xl border border-on-primary/10">
             <div className="relative">
@@ -30,7 +30,7 @@ export default function Sidebar() {
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-on-primary text-sm leading-none">Admin</span>
+              <span className="font-bold text-on-primary text-sm leading-none">HR Dashboard</span>
             </div>
           </div>
 
