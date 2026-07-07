@@ -204,12 +204,34 @@ function buildReportTitle(fileName) {
 
 const HARPREET_EMAIL = 'harpreet@tech2globe.com';
 const HR_EMAIL = 'hr@tech2globe.com';
+const PRIMARY_REPORT_EMAIL = 'monika.sharma@tech2globe.com';
+const FULL_REPORT_CC = [HR_EMAIL, HARPREET_EMAIL];
 
 function buildCcList(toEmail) {
   const normalized = String(toEmail || '').trim().toLowerCase();
   return normalized === HARPREET_EMAIL
     ? [HR_EMAIL]
     : [HARPREET_EMAIL, HR_EMAIL];
+}
+
+function getPresentRows(rows) {
+  return rows.filter((row) => Number(row.totalIn || 0) > 0);
+}
+
+function buildFullReportEmailBatch(rows, fileName) {
+  const presentRows = getPresentRows(rows);
+
+  if (presentRows.length === 0) {
+    throw new Error('No present employee rows found for the full attendance report.');
+  }
+
+  return {
+    toEmail: PRIMARY_REPORT_EMAIL,
+    ccEmails: FULL_REPORT_CC,
+    reportTitle: buildReportTitle(fileName),
+    reportHtml: buildReportHtml(presentRows, fileName),
+    rowCount: presentRows.length,
+  };
 }
 
 function normalizeEmployeeCode(value) {
@@ -441,12 +463,13 @@ export default function ProcessedAttendancePreview({ rows = [], isProcessing = f
               setEmailPrepError('');
               setIsPreparingEmail(true);
               try {
-                const batches = await buildDepartmentEmailBatches(filteredRows, fileName);
-                setEmailBatches(batches);
+                const fullBatch = buildFullReportEmailBatch(rows, fileName);
+                const departmentBatches = await buildDepartmentEmailBatches(filteredRows, fileName);
+                setEmailBatches([fullBatch, ...departmentBatches]);
                 setEmailSummaryTitle(buildReportTitle(fileName));
                 setIsEmailOpen(true);
               } catch (error) {
-                setEmailPrepError(error.message || 'Unable to prepare department emails.');
+                setEmailPrepError(error.message || 'Unable to prepare attendance emails.');
               } finally {
                 setIsPreparingEmail(false);
               }

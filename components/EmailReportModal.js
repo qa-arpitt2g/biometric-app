@@ -69,7 +69,7 @@ export default function EmailReportModal({
     event.preventDefault();
 
     if (!emailBatches.length) {
-      setError('No department recipient batches found for this report.');
+      setError('No email recipients found for this report.');
       return;
     }
 
