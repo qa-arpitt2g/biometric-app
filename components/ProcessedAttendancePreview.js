@@ -202,16 +202,12 @@ function buildReportTitle(fileName) {
   return `Biometric Attendance Report – ${reportDate}`;
 }
 
-const HARPREET_EMAIL = 'harpreet@tech2globe.com';
 const HR_EMAIL = 'hr@tech2globe.com';
 const PRIMARY_REPORT_EMAIL = 'monika.sharma@tech2globe.com';
-const FULL_REPORT_CC = [HR_EMAIL, HARPREET_EMAIL];
+const FULL_REPORT_CC = [HR_EMAIL];
 
-function buildCcList(toEmail) {
-  const normalized = String(toEmail || '').trim().toLowerCase();
-  return normalized === HARPREET_EMAIL
-    ? [HR_EMAIL]
-    : [HARPREET_EMAIL, HR_EMAIL];
+function buildCcList() {
+  return [HR_EMAIL];
 }
 
 function getPresentRows(rows) {
@@ -324,7 +320,7 @@ async function buildDepartmentEmailBatches(rows, fileName) {
   return Array.from(grouped.values()).map((group) => ({
     department: group.department,
     toEmail: group.toEmail,
-    ccEmails: buildCcList(group.toEmail),
+    ccEmails: buildCcList(),
     reportTitle: `${buildReportTitle(fileName)} - ${group.department}`,
     reportHtml: buildReportHtml(group.rows, fileName, { department: group.department }),
     rowCount: group.rows.length,

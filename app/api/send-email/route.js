@@ -1,28 +1,79 @@
 import nodemailer from 'nodemailer';
 import { NextResponse } from 'next/server';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function sanitizeNote(note) {
+  return note ? String(note).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+}
+
+function buildEmailContent(note, reportHtml) {
+  const sanitizedNote = sanitizeNote(note);
+  const bodyHtml = reportHtml || `
+      <div style="font-family:OpenSans,sans-serif;color:#111;">
+        <h2>Biometric Attendance Report</h2>
+        <p>Please find the attendance report attached to this email.</p>
+        <p><strong>This report contains sensitive PII data and has been encrypted during transit.</strong></p>
+      </div>
+    `;
+
+  return `
+      <div style="font-family:OpenSans,sans-serif;color:#111;line-height:1.5;">
+        ${sanitizedNote ? `<p><strong>Note from sender:</strong> ${sanitizedNote}</p>` : ''}
+        ${bodyHtml}
+      </div>
+    `;
+}
+
+function normalizeSingleBatch({ emails, toEmail, ccEmails, reportHtml, reportTitle }) {
+  const toList = Array.isArray(emails)
+    ? emails.map((email) => String(email).trim()).filter(Boolean)
+    : [String(toEmail || '').trim()].filter(Boolean);
+  const ccList = Array.isArray(ccEmails)
+    ? ccEmails.map((email) => String(email).trim()).filter(Boolean)
+    : [];
+
+  return {
+    toList,
+    ccList,
+    reportHtml,
+    reportTitle,
+  };
+}
+
+function normalizeBatches(payload) {
+  if (Array.isArray(payload?.batches)) {
+    return payload.batches.map((batch) => normalizeSingleBatch(batch));
+  }
+  return [normalizeSingleBatch(payload || {})];
+}
+
+function validateBatches(batches) {
+  if (!Array.isArray(batches) || batches.length === 0) {
+    return 'At least one recipient email is required';
+  }
+
+  for (const batch of batches) {
+    if (!batch.toList.length) {
+      return 'At least one recipient email is required';
+    }
+    const invalidEmails = [...batch.toList, ...batch.ccList].filter((email) => !EMAIL_REGEX.test(email));
+    if (invalidEmails.length > 0) {
+      return `Invalid email address(es): ${invalidEmails.join(', ')}`;
+    }
+  }
+
+  return null;
+}
+
 export async function POST(request) {
   try {
-    const { emails, toEmail, ccEmails, note, reportHtml, reportTitle } = await request.json();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const toList = Array.isArray(emails)
-      ? emails.map((email) => String(email).trim()).filter(Boolean)
-      : [String(toEmail || '').trim()].filter(Boolean);
-    const ccList = Array.isArray(ccEmails)
-      ? ccEmails.map((email) => String(email).trim()).filter(Boolean)
-      : [];
-
-    if (toList.length === 0) {
+    const payload = await request.json();
+    const batches = normalizeBatches(payload);
+    const validationError = validateBatches(batches);
+    if (validationError) {
       return NextResponse.json(
-        { error: 'At least one recipient email is required' },
-        { status: 400 }
-      );
-    }
-
-    const invalidEmails = [...toList, ...ccList].filter((email) => !emailRegex.test(email));
-    if (invalidEmails.length > 0) {
-      return NextResponse.json(
-        { error: `Invalid email address(es): ${invalidEmails.join(', ')}` },
+        { error: validationError },
         { status: 400 }
       );
     }
@@ -76,37 +127,29 @@ export async function POST(request) {
 
     await transporter.verify();
 
-    const sanitizedNote = note ? String(note).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
-    const bodyHtml = reportHtml || `
-      <div style="font-family:OpenSans,sans-serif;color:#111;">
-        <h2>Biometric Attendance Report</h2>
-        <p>Please find the attendance report attached to this email.</p>
-        <p><strong>This report contains sensitive PII data and has been encrypted during transit.</strong></p>
-      </div>
-    `;
+    const sendResults = [];
+    for (const batch of batches) {
+      const mailOptions = {
+        from: `"Biometric Attendance" <${emailFrom}>`,
+        to: batch.toList.join(', '),
+        ...(batch.ccList.length > 0 ? { cc: batch.ccList.join(', ') } : {}),
+        subject: batch.reportTitle || 'Biometric Attendance Report',
+        html: buildEmailContent(payload.note, batch.reportHtml),
+      };
 
-    const emailContent = `
-      <div style="font-family:OpenSans,sans-serif;color:#111;line-height:1.5;">
-        ${sanitizedNote ? `<p><strong>Note from sender:</strong> ${sanitizedNote}</p>` : ''}
-        ${bodyHtml}
-      </div>
-    `;
-
-    const mailOptions = {
-      from: `"Biometric Attendance" <${emailFrom}>`,
-      to: toList.join(', '),
-      ...(ccList.length > 0 ? { cc: ccList.join(', ') } : {}),
-      subject: reportTitle || 'Biometric Attendance Report',
-      html: emailContent,
-    };
-
-    const info = await transporter.sendMail(mailOptions);
+      const info = await transporter.sendMail(mailOptions);
+      sendResults.push({
+        to: batch.toList,
+        cc: batch.ccList,
+        messageId: info.messageId,
+      });
+    }
 
     return NextResponse.json(
       {
-        message: `Email sent successfully to ${toList.length} recipient(s)`,
-        ccCount: ccList.length,
-        messageId: info.messageId,
+        message: `Email sent successfully (${sendResults.length} batch${sendResults.length > 1 ? 'es' : ''})`,
+        sentCount: sendResults.length,
+        results: sendResults,
       },
       { status: 200 }
     );

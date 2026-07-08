@@ -2,18 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-async function sendReportEmail({ toEmail, ccEmails, note, reportHtml, reportTitle }) {
+async function sendReportEmails({ emailBatches, note }) {
   const response = await fetch('/api/send-email', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      toEmail,
-      ccEmails,
       note,
-      reportHtml,
-      reportTitle,
+      batches: emailBatches.map((batch) => ({
+        toEmail: batch.toEmail,
+        ccEmails: batch.ccEmails,
+        reportHtml: batch.reportHtml,
+        reportTitle: batch.reportTitle,
+      })),
     }),
   });
 
@@ -76,15 +78,7 @@ export default function EmailReportModal({
     setError('');
     setIsSending(true);
     try {
-      for (const batch of emailBatches) {
-        await sendReportEmail({
-          toEmail: batch.toEmail,
-          ccEmails: batch.ccEmails,
-          note,
-          reportHtml: batch.reportHtml,
-          reportTitle: batch.reportTitle,
-        });
-      }
+      await sendReportEmails({ emailBatches, note });
       handleClose();
       onSent?.(emailBatches.length);
     } catch (err) {
